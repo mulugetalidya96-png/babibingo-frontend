@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 100%;
+    --card: 235 25% 12%;
+    --card-foreground: 0 0% 100%;
+    --popover: 235 25% 12%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 24 80% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 235 25% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 235 20% 20%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 45 90% 58%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 235 20% 20%;
+    --input: 235 20% 20%;
+    --ring: 24 80% 56%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-[#0a0a0f] text-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2d3e;
+  border-radius: 4px;
+}
+
+.card-cell {
+  @apply flex items-center justify-center text-xs font-bold rounded-[4px] transition-all duration-150;
+  aspect-ratio: 1;
+}
+
+.bingo-b { @apply bg-red-500 text-white; }
+.bingo-i { @apply bg-blue-500 text-white; }
+.bingo-n { @apply bg-yellow-500 text-black; }
+.bingo-g { @apply bg-green-500 text-white; }
+.bingo-o { @apply bg-purple-500 text-white; }
+
+html, body {
+  overscroll-behavior-y: none;
+}
