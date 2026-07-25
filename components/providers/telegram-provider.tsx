@@ -23,18 +23,9 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [ready, setReady] = useState(false);
   const [initData, setInitData] = useState("");
-  const [debug, setDebug] = useState("");
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    alert(
-      JSON.stringify({
-        hasTelegram: !!window.Telegram,
-        hasWebApp: !!tg,
-        initData: tg?.initData?.length,
-        user: tg?.initDataUnsafe?.user,
-      }),
-    );
 
     if (!tg) {
       console.log("Not running inside Telegram");
@@ -53,13 +44,6 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    console.log("Telegram User:", telegramUser);
-    setDebug(
-      JSON.stringify({
-        initData: tg.initData,
-        user,
-      }),
-    );
     setUser({
       id: telegramUser.id,
       first_name: telegramUser.first_name,
@@ -90,13 +74,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
         initData,
       }}
     >
-      <>
-        {children}
-
-        <pre className="fixed bottom-0 left-0 right-0 bg-black text-white text-xs z-50">
-          {debug}
-        </pre>
-      </>
+      {children}
     </TelegramContext.Provider>
   );
 }
