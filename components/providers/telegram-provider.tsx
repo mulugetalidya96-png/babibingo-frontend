@@ -26,6 +26,12 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
+    console.log("=== TELEGRAM DEBUG ===");
+    console.log("Telegram:", window.Telegram);
+    console.log("WebApp:", tg);
+    console.log("initData:", tg?.initData);
+    console.log("initDataUnsafe:", tg?.initDataUnsafe);
+    console.log("user:", tg?.initDataUnsafe?.user);
 
     if (!tg) {
       console.log("Not running inside Telegram");
