@@ -49,6 +49,7 @@ export interface GameStateResponse {
 export interface WSRequest {
   type: string;
   card_numbers?: number[];
+  card_number?: number;
   card_id?: string;
 }
 
@@ -57,6 +58,7 @@ export interface WSResponse {
   type: string;
   game_id?: string;
   cards?: GameCard[];
+  card?: GameCard;
   state?: GameStateResponse;
   message?: string;
   winner?: WinnerInfo;

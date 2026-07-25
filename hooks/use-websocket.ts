@@ -77,6 +77,9 @@ export function useWebSocket(userId: number | undefined) {
             if (data.card_number !== undefined) {
               reserveCard(data.card_number);
             }
+            if (data.card) {
+              addMyCard(data.card);
+            }
             break;
           case "game.started":
             setGameState({
@@ -138,7 +141,16 @@ export function useWebSocket(userId: number | undefined) {
     };
 
     wsRef.current = ws;
-  }, [userId, setGameState, addMyCard, markCalled, setWinner, setMyCards]);
+  }, [
+    userId,
+    setGameState,
+    addMyCard,
+    markCalled,
+    setWinner,
+    setMyCards,
+    setReservedCards,
+    reserveCard,
+  ]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeout.current) {
