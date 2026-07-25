@@ -88,24 +88,46 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 30 }}
             transition={{ duration: 0.3 }}
+            className="h-[calc(100vh-120px)] flex flex-col"
           >
-            <CardGrid send={send} />
+            {/* Card selection - 50% */}
+            <div className="h-1/2 overflow-hidden">
+              <CardGrid send={send} />
+            </div>
 
-            {/* My reserved cards */}
-            {myCards.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <div className="text-center text-sm text-gray-400 font-medium">
-                  Your cards
+            {/* My cards - 50% */}
+            <div className="h-1/2 overflow-y-auto px-3 pb-4">
+              {myCards.length > 0 ? (
+                <>
+                  <div className="text-center text-sm text-gray-400 font-medium mb-3">
+                    Your cards
+                  </div>
+
+                  <div className="space-y-3">
+                    {myCards.map((card) => (
+                      <BingoCard key={card.id} card={card} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div
+                  className="
+          h-full
+          flex
+          items-center
+          justify-center
+          text-gray-600
+          text-sm
+        "
+                >
+                  Reserve a card to start playing
                 </div>
-
-                {myCards.map((card) => (
-                  <BingoCard key={card.id} card={card} />
-                ))}
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         )}
 
+        {/* ===== LIVE GAME ===== */}
         {/* ===== LIVE GAME ===== */}
         {status === "calling" && (
           <motion.div
@@ -115,63 +137,64 @@ export default function Home() {
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.3 }}
           >
-            <LastCalled />
+            {/* Game area */}
+            <div className="flex gap-2.5 px-3 mt-3">
+              {/* LEFT - Bingo Board */}
+              <div className="w-[42%]">
+                <BingoBoard />
+              </div>
 
-            {/* Game stats bar */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-[#151725] mx-3 rounded-lg mb-2 text-xs">
-              <div className="text-gray-400">
-                CALL <span className="text-white font-bold ml-1">22/75</span>
-              </div>
-              <div className="text-gray-400">
-                PLAYERS <span className="text-white font-bold ml-1">69</span>
-              </div>
-              <div className="text-gray-400">
-                STAKE <span className="text-white font-bold ml-1">20 ETB</span>
+              {/* RIGHT - Player Cards */}
+              <div className="flex-1 flex flex-col gap-3">
+                {/* Last Called */}
+                <LastCalled />
+
+                {/* Cards */}
+                {myCards.length > 0 && (
+                  <div className="space-y-3">
+                    {myCards.map((card) => (
+                      <BingoCard
+                        key={card.id}
+                        card={card}
+                        calledNumbers={calledNumbers}
+                      />
+                    ))}
+
+                    <button
+                      onClick={handleClaimBingo}
+                      className="
+                w-full
+                bg-gradient-to-r
+                from-purple-600
+                to-purple-500
+                hover:from-purple-500
+                hover:to-purple-400
+                active:scale-[0.98]
+                text-white
+                font-black
+                py-3.5
+                rounded-xl
+                text-lg
+                tracking-widest
+                transition-all
+                shadow-lg
+                shadow-purple-900/40
+              "
+                    >
+                      BINGO!
+                    </button>
+                  </div>
+                )}
+
+                {myCards.length === 0 && (
+                  <div className="flex items-center justify-center h-full text-gray-600">
+                    Waiting for card...
+                  </div>
+                )}
               </div>
             </div>
-
-            <BingoBoard />
-
-            {/* My cards during game */}
-            {myCards.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <div className="text-center text-sm text-gray-400 font-medium">
-                  Your cards
-                </div>
-                {myCards.map((card) => (
-                  <BingoCard
-                    key={card.id}
-                    card={card}
-                    calledNumbers={calledNumbers}
-                  />
-                ))}
-
-                <div className="px-3 pb-4">
-                  <button
-                    onClick={handleClaimBingo}
-                    className="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition-all shadow-lg shadow-green-500/20 animate-pulse"
-                  >
-                    🎉 CLAIM BINGO!
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {myCards.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-gray-600">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  className="w-12 h-12 border-2 border-gray-700 border-t-gray-400 rounded-full mb-4"
-                />
-                <p className="text-lg font-medium tracking-wide">
-                  WAIT FOR NEXT GAME
-                </p>
-              </div>
-            )}
           </motion.div>
         )}
-
         {/* ===== FINISHED / WAITING ===== */}
         {status === "finished" && !winner && (
           <motion.div

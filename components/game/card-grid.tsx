@@ -74,14 +74,25 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
         selected
       </div>
 
-      <div className="grid grid-cols-10 gap-[3px]">
-        {Array.from({ length: 150 }, (_, i) => i + 1).map((num) => (
-          <motion.button
-            key={num}
-            disabled={!canSelect(num)}
-            whileTap={canSelect(num) ? { scale: 0.85 } : {}}
-            onClick={() => handleClick(num)}
-            className={`
+      {/* Scrollable 400 cards */}
+      <div
+        className="
+        max-h-[60vh]
+        overflow-y-auto
+        pr-1
+        scrollbar-thin
+        scrollbar-thumb-gray-700
+        scrollbar-track-transparent
+      "
+      >
+        <div className="grid grid-cols-10 gap-[3px]">
+          {Array.from({ length: 400 }, (_, i) => i + 1).map((num) => (
+            <motion.button
+              key={num}
+              disabled={!canSelect(num)}
+              whileTap={canSelect(num) ? { scale: 0.85 } : {}}
+              onClick={() => handleClick(num)}
+              className={`
               aspect-square
               flex
               items-center
@@ -98,10 +109,11 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
                   : "cursor-default"
               }
             `}
-          >
-            {num}
-          </motion.button>
-        ))}
+            >
+              {num}
+            </motion.button>
+          ))}
+        </div>
       </div>
     </div>
   );
