@@ -23,6 +23,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [ready, setReady] = useState(false);
   const [initData, setInitData] = useState("");
+  const [debug, setDebug] = useState("");
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -51,7 +52,12 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     }
 
     console.log("Telegram User:", telegramUser);
-
+    setDebug(
+      JSON.stringify({
+        initData: tg.initData,
+        user,
+      }),
+    );
     setUser({
       id: telegramUser.id,
       first_name: telegramUser.first_name,
@@ -82,7 +88,13 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
         initData,
       }}
     >
-      {children}
+      <>
+        {children}
+
+        <pre className="fixed bottom-0 left-0 right-0 bg-black text-white text-xs z-50">
+          {debug}
+        </pre>
+      </>
     </TelegramContext.Provider>
   );
 }
