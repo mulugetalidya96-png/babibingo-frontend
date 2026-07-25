@@ -160,6 +160,7 @@ export function useWebSocket(userId: number | undefined) {
   }, []);
 
   const send = useCallback((data: object) => {
+    console.log("[WS SEND]", data);
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
     }
