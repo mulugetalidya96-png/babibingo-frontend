@@ -17,6 +17,7 @@ export function useWebSocket(userId: number | undefined) {
     setMyCards,
     setReservedCards,
     reserveCard,
+    resetForNewGame,
   } = useGameStore();
 
   const connect = useCallback(() => {
@@ -37,6 +38,20 @@ export function useWebSocket(userId: number | undefined) {
 
         switch (data.type) {
           case "game.new":
+            resetForNewGame();
+
+            setGameState({
+              gameId: data.game_id || null,
+              status: "waiting",
+              timer: data.timer ?? 0,
+              players: 0,
+              boardCount: 0,
+              pool: 0,
+              stake: data.stake ?? 20,
+              reservedCards: [],
+            });
+
+            break;
           case "timer.tick":
             setGameState({
               gameId: data.game_id || null,

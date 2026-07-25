@@ -57,6 +57,7 @@ interface GameState {
   reset: () => void;
   setReservedCards: (cards: number[]) => void;
   reserveCard: (card: number) => void;
+  resetForNewGame: () => void;
 }
 
 const initialState = {
@@ -115,7 +116,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   reset: () => set(initialState),
   setReservedCards: (cards) => set({ reservedCards: cards }),
-
+  resetForNewGame: () =>
+    set((s) => ({
+      ...initialState,
+      gameId: s.gameId,
+      status: "waiting",
+    })),
   reserveCard: (card) =>
     set((s) => ({
       reservedCards: s.reservedCards.includes(card)
