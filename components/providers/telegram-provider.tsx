@@ -25,10 +25,10 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [initData, setInitData] = useState("");
 
   useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp;
 
     if (!tg) {
-      console.log("Telegram WebApp not available");
+      console.log("Not running inside Telegram");
       setReady(true);
       return;
     }
@@ -36,41 +36,46 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     tg.ready();
     tg.expand();
 
-    tg.setHeaderColor("#0a0a0f");
-    tg.setBackgroundColor("#0a0a0f");
-    tg.enableClosingConfirmation();
-
     const telegramUser = tg.initDataUnsafe?.user;
 
-    if (telegramUser) {
-      console.log("Telegram user:", telegramUser);
-      setUser({
-        id: telegramUser.id,
-        first_name: telegramUser.first_name,
-        last_name: telegramUser.last_name,
-        username: telegramUser.username,
-        language_code: telegramUser.language_code,
-      });
-    } else {
-      console.log("No Telegram user found");
+    if (!telegramUser) {
+      console.log("Telegram user not available");
+      setReady(true);
+      return;
     }
 
-    setInitData(tg.initData || "");
+    console.log("Telegram User:", telegramUser);
+
+    setUser({
+      id: telegramUser.id,
+      first_name: telegramUser.first_name,
+      last_name: telegramUser.last_name,
+      username: telegramUser.username,
+      language_code: telegramUser.language_code,
+    });
+
+    setInitData(tg.initData);
     setReady(true);
   }, []);
 
   const expand = () => {
-    const tg = (window as any).Telegram?.WebApp;
-    tg?.expand();
+    window.Telegram?.WebApp?.expand();
   };
 
   const close = () => {
-    const tg = (window as any).Telegram?.WebApp;
-    tg?.close();
+    window.Telegram?.WebApp?.close();
   };
 
   return (
-    <TelegramContext.Provider value={{ user, ready, expand, close, initData }}>
+    <TelegramContext.Provider
+      value={{
+        user,
+        ready,
+        expand,
+        close,
+        initData,
+      }}
+    >
       {children}
     </TelegramContext.Provider>
   );
