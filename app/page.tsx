@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTelegram } from "@/components/providers/telegram-provider";
 import { useGameStore } from "@/hooks/use-game-store";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -12,10 +12,12 @@ import { LastCalled } from "@/components/game/last-called";
 import { WinnerModal } from "@/components/game/winner-modal";
 import { AnimatePresence, motion } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
+import { useBingoSound } from "@/hooks/use-bingo-sound";
 
 export default function Home() {
   const { user, ready } = useTelegram();
   const { send } = useWebSocket(user?.id);
+  const { playNumber } = useBingoSound();
 
   const {
     status,
@@ -26,6 +28,9 @@ export default function Home() {
     toggleSound,
     setNextGameTimer,
   } = useGameStore();
+  const called = useGameStore((s) => s.called);
+
+  const lastCalledRef = useRef<string | null>(null);
 
   // Countdown timer for next game
   useEffect(() => {
@@ -44,6 +49,18 @@ export default function Home() {
   const calledNumbers = useGameStore((s) =>
     (s.called ?? []).map((c) => parseInt(c.slice(1))),
   );
+  useEffect(() => {
+    if (!called || called.length === 0) return;
+
+    const latest = called[called.length - 1];
+
+    // avoid replay on reload / initial websocket state
+    if (lastCalledRef.current === latest) return;
+
+    lastCalledRef.current = latest;
+
+    playNumber(latest);
+  }, [called, playNumber]);
 
   if (!ready) {
     return (
