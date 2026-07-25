@@ -1,44 +1,62 @@
-"use client"
+"use client";
 
-import { create } from "zustand"
-import type { GameCard, WinnerInfo } from "@/types/game"
+import { create } from "zustand";
+import type { GameCard, WinnerInfo } from "@/types/game";
 
 interface GameState {
   // Game info
-  gameId: string | null
-  status: "waiting" | "calling" | "finished" | "idle"
-  stake: number
-  timer: number
-  players: number
-  boardCount: number
-  pool: number
-  called: string[]
-  maxCards: number
+  gameId: string | null;
+  status: "waiting" | "calling" | "finished" | "idle";
+  stake: number;
+  timer: number;
+  players: number;
+  boardCount: number;
+  pool: number;
+  called: string[];
+  maxCards: number;
 
+  reservedCards: number[];
   // User cards
-  myCards: GameCard[]
-  selectedCards: number[]
+  myCards: GameCard[];
+  selectedCards: number[];
 
   // Winner
-  winner: WinnerInfo | null
-  nextGameTimer: number
+  winner: WinnerInfo | null;
+  nextGameTimer: number;
 
   // UI
-  soundEnabled: boolean
-  currentCall: string | null
+  soundEnabled: boolean;
+  currentCall: string | null;
 
   // Actions
-  setGameState: (state: Partial<Omit<GameState, "setGameState" | "selectCard" | "deselectCard" | "addMyCard" | "markCalled" | "setWinner" | "toggleSound" | "setCurrentCall" | "reset">>) => void
-  selectCard: (cardNumber: number) => void
-  deselectCard: (cardNumber: number) => void
-  addMyCard: (card: GameCard) => void
-  setMyCards: (cards: GameCard[]) => void
-  markCalled: (display: string) => void
-  setWinner: (winner: WinnerInfo | null) => void
-  setNextGameTimer: (timer: number) => void
-  toggleSound: () => void
-  setCurrentCall: (call: string | null) => void
-  reset: () => void
+  setGameState: (
+    state: Partial<
+      Omit<
+        GameState,
+        | "setGameState"
+        | "selectCard"
+        | "deselectCard"
+        | "addMyCard"
+        | "markCalled"
+        | "setWinner"
+        | "toggleSound"
+        | "setCurrentCall"
+        | "reset"
+      >
+    >,
+  ) => void;
+  selectCard: (cardNumber: number) => void;
+  deselectCard: (cardNumber: number) => void;
+  addMyCard: (card: GameCard) => void;
+  setMyCards: (cards: GameCard[]) => void;
+  markCalled: (display: string) => void;
+  setWinner: (winner: WinnerInfo | null) => void;
+  setNextGameTimer: (timer: number) => void;
+  toggleSound: () => void;
+  setCurrentCall: (call: string | null) => void;
+  reset: () => void;
+  setReservedCards: (cards: number[]) => void;
+  reserveCard: (card: number) => void;
 }
 
 const initialState = {
@@ -54,10 +72,11 @@ const initialState = {
   myCards: [],
   selectedCards: [],
   winner: null,
+  reservedCards: [],
   nextGameTimer: 0,
   soundEnabled: true,
   currentCall: null,
-}
+};
 
 export const useGameStore = create<GameState>((set, get) => ({
   ...initialState,
@@ -66,9 +85,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   selectCard: (cardNumber) =>
     set((s) => {
-      if (s.selectedCards.includes(cardNumber)) return s
-      if (s.selectedCards.length >= s.maxCards) return s
-      return { selectedCards: [...s.selectedCards, cardNumber] }
+      if (s.selectedCards.includes(cardNumber)) return s;
+      if (s.selectedCards.length >= s.maxCards) return s;
+      return { selectedCards: [...s.selectedCards, cardNumber] };
     }),
 
   deselectCard: (cardNumber) =>
@@ -76,8 +95,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       selectedCards: s.selectedCards.filter((c) => c !== cardNumber),
     })),
 
-  addMyCard: (card) =>
-    set((s) => ({ myCards: [...s.myCards, card] })),
+  addMyCard: (card) => set((s) => ({ myCards: [...s.myCards, card] })),
 
   setMyCards: (cards) => set({ myCards: cards }),
 
@@ -96,4 +114,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   setCurrentCall: (call) => set({ currentCall: call }),
 
   reset: () => set(initialState),
-}))
+  setReservedCards: (cards) => set({ reservedCards: cards }),
+
+  reserveCard: (card) =>
+    set((s) => ({
+      reservedCards: s.reservedCards.includes(card)
+        ? s.reservedCards
+        : [...s.reservedCards, card],
+    })),
+}));

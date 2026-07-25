@@ -43,6 +43,7 @@ export interface GameStateResponse {
   called: string[];
   my_cards: GameCard[];
   max_cards: number;
+  reserved_cards: number[];
 }
 
 export interface WSRequest {
@@ -67,4 +68,6 @@ export interface WSResponse {
   timer?: number;
   pool?: number;
   stake?: number;
+  card_number?: number;
+  user_id?: number;
 }

@@ -19,7 +19,6 @@ export default function Home() {
 
   const {
     status,
-    selectedCards,
     myCards,
     winner,
     soundEnabled,
@@ -36,11 +35,6 @@ export default function Home() {
     }, 1000);
     return () => clearInterval(interval);
   }, [status, nextGameTimer, setNextGameTimer]);
-
-  const handleBuyCards = useCallback(() => {
-    if (selectedCards.length === 0) return;
-    send({ type: "card.select", card_numbers: selectedCards });
-  }, [selectedCards, send]);
 
   const handleClaimBingo = useCallback(() => {
     if (myCards.length === 0) return;
@@ -97,38 +91,18 @@ export default function Home() {
           >
             <CardGrid />
 
-            {/* My purchased cards */}
+            {/* My reserved cards */}
             {myCards.length > 0 && (
               <div className="mt-4 space-y-3">
                 <div className="text-center text-sm text-gray-400 font-medium">
-                  Your selected cards
+                  Your cards
                 </div>
+
                 {myCards.map((card) => (
                   <BingoCard key={card.id} card={card} />
                 ))}
               </div>
             )}
-
-            {/* Buy button */}
-            <AnimatePresence>
-              {selectedCards.length > 0 && (
-                <motion.div
-                  initial={{ y: 100, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 100, opacity: 0 }}
-                  className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent z-20"
-                >
-                  <button
-                    onClick={handleBuyCards}
-                    className="w-full bg-[#e8793c] hover:bg-orange-600 active:bg-orange-700 text-white font-black py-4 rounded-xl text-lg transition-all shadow-lg shadow-orange-500/20"
-                  >
-                    Buy {selectedCards.length} Card
-                    {selectedCards.length > 1 ? "s" : ""} —{" "}
-                    {selectedCards.length * 20} ETB
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         )}
 

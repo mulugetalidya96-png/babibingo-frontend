@@ -9,8 +9,15 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws";
 export function useWebSocket(userId: number | undefined) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
-  const { setGameState, addMyCard, markCalled, setWinner, setMyCards } =
-    useGameStore();
+  const {
+    setGameState,
+    addMyCard,
+    markCalled,
+    setWinner,
+    setMyCards,
+    setReservedCards,
+    reserveCard,
+  } = useGameStore();
 
   const connect = useCallback(() => {
     if (!userId) return;
@@ -63,9 +70,14 @@ export function useWebSocket(userId: number | undefined) {
               if (data.state.my_cards) {
                 setMyCards(data.state.my_cards);
               }
+              setReservedCards(data.state.reserved_cards ?? []);
             }
             break;
-
+          case "card.reserved":
+            if (data.card_number !== undefined) {
+              reserveCard(data.card_number);
+            }
+            break;
           case "game.started":
             setGameState({
               status: "calling",
