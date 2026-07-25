@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { useTelegram } from "@/components/providers/telegram-provider"
-import { useGameStore } from "@/hooks/use-game-store"
-import { useWebSocket } from "@/hooks/use-websocket"
-import { GameHeader } from "@/components/game/game-header"
-import { CardGrid } from "@/components/game/card-grid"
-import { BingoCard } from "@/components/game/bingo-card"
-import { BingoBoard } from "@/components/game/bingo-board"
-import { LastCalled } from "@/components/game/last-called"
-import { WinnerModal } from "@/components/game/winner-modal"
-import { AnimatePresence, motion } from "framer-motion"
-import { Volume2, VolumeX } from "lucide-react"
+import { useEffect, useState, useCallback } from "react";
+import { useTelegram } from "@/components/providers/telegram-provider";
+import { useGameStore } from "@/hooks/use-game-store";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { GameHeader } from "@/components/game/game-header";
+import { CardGrid } from "@/components/game/card-grid";
+import { BingoCard } from "@/components/game/bingo-card";
+import { BingoBoard } from "@/components/game/bingo-board";
+import { LastCalled } from "@/components/game/last-called";
+import { WinnerModal } from "@/components/game/winner-modal";
+import { AnimatePresence, motion } from "framer-motion";
+import { Volume2, VolumeX } from "lucide-react";
 
 export default function Home() {
-  const { user, ready } = useTelegram()
-  const { send } = useWebSocket(user?.id)
+  const { user, ready } = useTelegram();
+  const { send } = useWebSocket(user?.id);
 
   const {
     status,
@@ -26,35 +26,37 @@ export default function Home() {
     nextGameTimer,
     toggleSound,
     setNextGameTimer,
-  } = useGameStore()
+  } = useGameStore();
 
   // Countdown timer for next game
   useEffect(() => {
-    if (status !== "finished" || nextGameTimer <= 0) return
+    if (status !== "finished" || nextGameTimer <= 0) return;
     const interval = setInterval(() => {
-      setNextGameTimer(Math.max(0, nextGameTimer - 1))
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [status, nextGameTimer, setNextGameTimer])
+      setNextGameTimer(Math.max(0, nextGameTimer - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [status, nextGameTimer, setNextGameTimer]);
 
   const handleBuyCards = useCallback(() => {
-    if (selectedCards.length === 0) return
-    send({ type: "card.select", card_numbers: selectedCards })
-  }, [selectedCards, send])
+    if (selectedCards.length === 0) return;
+    send({ type: "card.select", card_numbers: selectedCards });
+  }, [selectedCards, send]);
 
   const handleClaimBingo = useCallback(() => {
-    if (myCards.length === 0) return
-    send({ type: "bingo.claim", card_id: myCards[0].id })
-  }, [myCards, send])
+    if (myCards.length === 0) return;
+    send({ type: "bingo.claim", card_id: myCards[0].id });
+  }, [myCards, send]);
 
-  const calledNumbers = useGameStore((s) => s.called.map((c) => parseInt(c.slice(1))))
+  const calledNumbers = useGameStore((s) =>
+    (s.called ?? []).map((c) => parseInt(c.slice(1))),
+  );
 
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         <div className="animate-pulse">Loading BabiBingo...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -120,7 +122,9 @@ export default function Home() {
                     onClick={handleBuyCards}
                     className="w-full bg-[#e8793c] hover:bg-orange-600 active:bg-orange-700 text-white font-black py-4 rounded-xl text-lg transition-all shadow-lg shadow-orange-500/20"
                   >
-                    Buy {selectedCards.length} Card{selectedCards.length > 1 ? "s" : ""} — {selectedCards.length * 20} ETB
+                    Buy {selectedCards.length} Card
+                    {selectedCards.length > 1 ? "s" : ""} —{" "}
+                    {selectedCards.length * 20} ETB
                   </button>
                 </motion.div>
               )}
@@ -141,9 +145,15 @@ export default function Home() {
 
             {/* Game stats bar */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-[#151725] mx-3 rounded-lg mb-2 text-xs">
-              <div className="text-gray-400">CALL <span className="text-white font-bold ml-1">22/75</span></div>
-              <div className="text-gray-400">PLAYERS <span className="text-white font-bold ml-1">69</span></div>
-              <div className="text-gray-400">STAKE <span className="text-white font-bold ml-1">20 ETB</span></div>
+              <div className="text-gray-400">
+                CALL <span className="text-white font-bold ml-1">22/75</span>
+              </div>
+              <div className="text-gray-400">
+                PLAYERS <span className="text-white font-bold ml-1">69</span>
+              </div>
+              <div className="text-gray-400">
+                STAKE <span className="text-white font-bold ml-1">20 ETB</span>
+              </div>
             </div>
 
             <BingoBoard />
@@ -151,7 +161,9 @@ export default function Home() {
             {/* My cards during game */}
             {myCards.length > 0 && (
               <div className="mt-4 space-y-3">
-                <div className="text-center text-sm text-gray-400 font-medium">Your cards</div>
+                <div className="text-center text-sm text-gray-400 font-medium">
+                  Your cards
+                </div>
                 {myCards.map((card) => (
                   <BingoCard
                     key={card.id}
@@ -178,7 +190,9 @@ export default function Home() {
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                   className="w-12 h-12 border-2 border-gray-700 border-t-gray-400 rounded-full mb-4"
                 />
-                <p className="text-lg font-medium tracking-wide">WAIT FOR NEXT GAME</p>
+                <p className="text-lg font-medium tracking-wide">
+                  WAIT FOR NEXT GAME
+                </p>
               </div>
             )}
           </motion.div>
@@ -197,9 +211,13 @@ export default function Home() {
               transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
               className="w-12 h-12 border-2 border-gray-700 border-t-gray-400 rounded-full mb-4"
             />
-            <p className="text-lg font-medium tracking-wide">WAIT FOR NEXT GAME</p>
+            <p className="text-lg font-medium tracking-wide">
+              WAIT FOR NEXT GAME
+            </p>
             {nextGameTimer > 0 && (
-              <p className="text-sm text-gray-500 mt-2">Starting in {nextGameTimer}s</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Starting in {nextGameTimer}s
+              </p>
             )}
           </motion.div>
         )}
@@ -208,5 +226,5 @@ export default function Home() {
       {/* Winner Modal Overlay */}
       <WinnerModal />
     </main>
-  )
+  );
 }
