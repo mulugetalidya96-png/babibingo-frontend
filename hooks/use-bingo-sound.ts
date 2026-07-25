@@ -8,18 +8,26 @@ export function useBingoSound() {
   const playNumber = (call: string) => {
     if (!call) return;
 
-    // B1 -> b_1.m4a
     const letter = call[0].toLowerCase();
     const number = call.slice(1);
 
     const src = `/sounds/${letter}_${number}.mp3`;
 
-    if (audioRef.current) {
-      audioRef.current.pause();
+    let audio = audioRef.current;
+
+    // create Audio only once
+    if (!audio) {
+      audio = new Audio();
+      audio.preload = "auto";
+      audioRef.current = audio;
     }
 
-    const audio = new Audio(src);
-    audioRef.current = audio;
+    // stop current sound
+    audio.pause();
+    audio.currentTime = 0;
+
+    // change source
+    audio.src = src;
 
     audio.play().catch((err) => {
       console.log("Audio blocked:", err);
