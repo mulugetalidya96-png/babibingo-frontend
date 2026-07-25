@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "@/hooks/use-game-store";
 
-export function CardGrid() {
+export function CardGrid({ send }: { send: (data: object) => void }) {
   const {
     selectedCards,
     myCards,
@@ -11,7 +11,6 @@ export function CardGrid() {
     status,
     selectCard,
     deselectCard,
-    reserveCard,
   } = useGameStore();
 
   const myCardNumbers = new Set(myCards.map((c) => c.card_number));
@@ -42,7 +41,10 @@ export function CardGrid() {
     selectCard(num);
 
     // Update reservation state
-    reserveCard(num);
+    send({
+      type: "card.reserve",
+      card_number: num,
+    });
   };
 
   const getCellClass = (num: number) => {

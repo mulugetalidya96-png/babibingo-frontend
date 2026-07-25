@@ -89,7 +89,7 @@ export default function Home() {
             exit={{ opacity: 0, x: 30 }}
             transition={{ duration: 0.3 }}
           >
-            <CardGrid />
+            <CardGrid send={send} />
 
             {/* My reserved cards */}
             {myCards.length > 0 && (
