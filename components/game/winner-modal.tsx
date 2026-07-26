@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/hooks/use-game-store";
 import { BingoCard } from "./bingo-card";
-import { Trophy, Users } from "lucide-react";
+import { Trophy, Users, Crown } from "lucide-react";
 
 export function WinnerModal() {
   const { winner, winners, nextGameTimer } = useGameStore();
@@ -39,29 +39,29 @@ export function WinnerModal() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
       >
         <motion.div
           initial={{ scale: 0.5, y: 50 }}
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="w-full max-w-sm"
+          className="w-full max-w-md mx-auto"
         >
           {/* Trophy */}
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-1 sm:mb-2">
             <motion.div
               animate={{ rotate: [0, -10, 10, -10, 0], y: [0, -5, 0] }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
             >
               {hasMultipleWinners ? (
                 <Users
-                  size={48}
-                  className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]"
+                  size={40}
+                  className="text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]"
                 />
               ) : (
                 <Trophy
-                  size={56}
-                  className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]"
+                  size={48}
+                  className="text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]"
                 />
               )}
             </motion.div>
@@ -71,43 +71,52 @@ export function WinnerModal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-3xl font-black text-center text-yellow-400 mb-4 tracking-wider"
+            className="text-2xl sm:text-3xl font-black text-center text-yellow-400 mb-3 sm:mb-4 tracking-wider"
           >
             {hasMultipleWinners
               ? `🎉 ${allWinners.length} WINNERS!`
-              : "WINNER!"}
+              : "🎉 BINGO!"}
           </motion.h2>
 
-          {/* ✅ Show all winners */}
+          {/* ✅ Winners List - Scrollable for many winners */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-[#1e2130] rounded-2xl p-5 text-center border border-white/5 mb-4"
+            className="bg-[#1a1d2e] rounded-2xl p-3 sm:p-5 border border-white/5 mb-3 sm:mb-4 max-h-[40vh] overflow-y-auto"
           >
             {allWinners.map((w, index) => (
               <motion.div
                 key={w.user_id || index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className={`py-2 ${index > 0 ? "border-t border-white/5" : ""}`}
+                transition={{ delay: 0.3 + index * 0.08 }}
+                className={`py-2 sm:py-2.5 ${index > 0 ? "border-t border-white/5" : ""}`}
               >
-                <div className="flex items-center justify-between px-2">
-                  <div className="text-left">
-                    <div className="text-sm font-semibold text-white">
-                      {w.name}
-                    </div>
-                    <div className="text-xs text-gray-400 font-mono">
-                      {w.phone}
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {/* Crown for first winner */}
+                    {index === 0 && (
+                      <Crown
+                        size={14}
+                        className="text-yellow-400 flex-shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm sm:text-base font-semibold text-white truncate">
+                        {w.name}
+                      </div>
+                      <div className="text-xs text-gray-400 font-mono truncate">
+                        {w.phone}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-400">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-base sm:text-lg font-bold text-green-400">
                       +{w.prize.toFixed(0)} ETB
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Card #{w.card_number}
+                    <div className="text-[10px] sm:text-xs text-gray-500">
+                      #{w.card_number}
                     </div>
                   </div>
                 </div>
@@ -115,26 +124,60 @@ export function WinnerModal() {
             ))}
           </motion.div>
 
-          {/* Show first winner's card */}
+          {/* ✅ Show winning cards - Responsive grid for multiple cards */}
           {winner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-[#1e2130] rounded-2xl p-5 text-center border border-white/5"
+              className="bg-[#1a1d2e] rounded-2xl p-3 sm:p-5 border border-white/5"
             >
-              <div className="text-sm text-gray-400 mb-2">Winning Card</div>
-              <div className="mb-2">
-                <BingoCard
-                  card={winningCard}
-                  calledNumbers={winningCard.marked_numbers}
-                  highlightWin={true}
-                  winningCells={winningCells}
-                />
+              <div className="text-xs sm:text-sm text-gray-400 mb-2 text-center">
+                Winning Card{hasMultipleWinners ? "s" : ""}
               </div>
-              <div className="text-xs text-gray-500 mt-2">
-                Pattern: {winner.pattern || "Horizontal"}
+
+              {/* ✅ Responsive grid for multiple cards */}
+              <div
+                className={`
+                grid gap-2 sm:gap-3
+                ${hasMultipleWinners ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}
+              `}
+              >
+                {/* Show up to 2 winning cards */}
+                {allWinners.slice(0, 2).map((w, idx) => (
+                  <motion.div
+                    key={w.user_id || idx}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + idx * 0.1 }}
+                    className="bg-[#111424] rounded-xl p-2 sm:p-3 border border-white/5"
+                  >
+                    <div className="text-[10px] text-gray-500 text-center mb-1">
+                      {w.name} • #{w.card_number}
+                    </div>
+                    <div className="scale-75 sm:scale-90 transform origin-top">
+                      <BingoCard
+                        card={winningCard}
+                        calledNumbers={winningCard.marked_numbers}
+                        highlightWin={true}
+                        winningCells={winningCells}
+                        size="sm"
+                      />
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-center mt-1">
+                      {w.pattern || "Horizontal"}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
+
+              {/* ✅ Show "more" indicator if more than 2 winners */}
+              {hasMultipleWinners && allWinners.length > 2 && (
+                <div className="text-center text-xs text-gray-500 mt-2">
+                  + {allWinners.length - 2} more winner
+                  {allWinners.length - 2 > 1 ? "s" : ""}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -143,20 +186,22 @@ export function WinnerModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-6 text-center"
+            className="mt-4 sm:mt-6 text-center"
           >
-            <div className="text-sm text-gray-400 mb-2">Next game in</div>
+            <div className="text-xs sm:text-sm text-gray-400 mb-1">
+              Next game in
+            </div>
             <motion.div
               key={nextGameTimer}
               initial={{ scale: 1.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-5xl font-black text-white mb-3"
+              className="text-4xl sm:text-5xl font-black text-white mb-2"
             >
-              {nextGameTimer}
+              {nextGameTimer}s
             </motion.div>
             <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
               <motion.div
-                className="bg-yellow-400 h-full rounded-full"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full rounded-full"
                 initial={{ width: "100%" }}
                 animate={{ width: "0%" }}
                 transition={{ duration: nextGameTimer, ease: "linear" }}
