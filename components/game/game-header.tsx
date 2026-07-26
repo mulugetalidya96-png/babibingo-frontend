@@ -18,7 +18,9 @@ export function GameHeader() {
 
     const fetchBalance = async () => {
       try {
-        const response = await fetch(`/user/balance?telegram_id=${user.id}`);
+        const response = await fetch(
+          `/api/user/balance?telegram_id=${user.id}`,
+        );
         if (response.ok) {
           const data = await response.json();
           setBalance(data.balance);
