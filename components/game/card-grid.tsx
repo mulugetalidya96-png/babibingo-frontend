@@ -21,13 +21,20 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
   const handleClick = (num: number) => {
     if (!isSelectable) return;
 
-    // Remove selection
+    // ✅ If already selected, deselect AND cancel reservation
     if (selectedCards.includes(num)) {
       deselectCard(num);
+
+      // ✅ Send cancellation to backend
+      send({
+        type: "card.cancel",
+        card_number: num,
+      });
+
       return;
     }
 
-    // Already owned or reserved
+    // Already owned or reserved (skip)
     if (myCardNumbers.has(num) || reservedSet.has(num)) {
       return;
     }
@@ -40,7 +47,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
     // Local selection
     selectCard(num);
 
-    // Update reservation state
+    // Send reservation to backend
     send({
       type: "card.reserve",
       card_number: num,
@@ -48,23 +55,30 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
   };
 
   const getCellClass = (num: number) => {
+    // ✅ Selected (pending reservation)
     if (selectedCards.includes(num)) {
       return "bg-bingo-yellow text-black shadow-[0_0_10px_rgba(245,197,66,0.6)]";
     }
 
+    // ✅ Owned cards (reserved and confirmed)
     if (myCardNumbers.has(num)) {
       return "bg-bingo-orange text-white";
     }
 
+    // ✅ Reserved by other players
     if (reservedSet.has(num)) {
       return "bg-gray-600 text-gray-300 cursor-not-allowed";
     }
 
+    // Available
     return "bg-[#1a1d2e] text-gray-400 hover:bg-[#252a3d]";
   };
 
   const canSelect = (num: number) =>
-    isSelectable && !myCardNumbers.has(num) && !reservedSet.has(num);
+    isSelectable &&
+    !myCardNumbers.has(num) &&
+    !reservedSet.has(num) &&
+    !selectedCards.includes(num); // ✅ Can't select if already selected
 
   return (
     <div className="px-3 py-2">
@@ -72,6 +86,11 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
         Select Your Cards —{" "}
         <span className="text-white font-bold">{selectedCards.length}/2</span>{" "}
         selected
+        {selectedCards.length > 0 && (
+          <span className="ml-2 text-xs text-yellow-400">
+            (Click again to cancel)
+          </span>
+        )}
       </div>
 
       {/* Scrollable 400 cards */}
@@ -89,8 +108,12 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
           {Array.from({ length: 400 }, (_, i) => i + 1).map((num) => (
             <motion.button
               key={num}
-              disabled={!canSelect(num)}
-              whileTap={canSelect(num) ? { scale: 0.85 } : {}}
+              disabled={!canSelect(num) && !selectedCards.includes(num)}
+              whileTap={
+                canSelect(num) || selectedCards.includes(num)
+                  ? { scale: 0.85 }
+                  : {}
+              }
               onClick={() => handleClick(num)}
               className={`
               aspect-square
@@ -104,7 +127,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
               duration-150
               ${getCellClass(num)}
               ${
-                canSelect(num)
+                canSelect(num) || selectedCards.includes(num)
                   ? "cursor-pointer active:scale-95"
                   : "cursor-default"
               }

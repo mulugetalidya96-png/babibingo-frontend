@@ -37,6 +37,8 @@ interface GameState {
         | "selectCard"
         | "deselectCard"
         | "addMyCard"
+        | "removeMyCard"
+        | "setMyCards"
         | "markCalled"
         | "setWinner"
         | "toggleSound"
@@ -54,6 +56,7 @@ interface GameState {
   selectCard: (cardNumber: number) => void;
   deselectCard: (cardNumber: number) => void;
   addMyCard: (card: GameCard) => void;
+  removeMyCard: (cardNumber: number) => void; // ✅ Added
   setMyCards: (cards: GameCard[]) => void;
   markCalled: (display: string) => void;
   setWinner: (winner: WinnerInfo | null) => void;
@@ -62,12 +65,12 @@ interface GameState {
   setCurrentCall: (call: string | null) => void;
   reset: () => void;
 
-  // ✅ Reserved cards management
-  setReservedCardsList: (cards: number[]) => void; // Set entire list
-  addReservedCard: (card: number) => void; // Add single card
-  removeReservedCard: (card: number) => void; // Remove single card
-  reserveCard: (card: number) => void; // Alias for addReservedCard
-  unReserveCard: (card: number) => void; // Alias for removeReservedCard
+  // Reserved cards management
+  setReservedCardsList: (cards: number[]) => void;
+  addReservedCard: (card: number) => void;
+  removeReservedCard: (card: number) => void;
+  reserveCard: (card: number) => void;
+  unReserveCard: (card: number) => void;
 
   resetForNewGame: () => void;
 }
@@ -110,6 +113,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addMyCard: (card) => set((s) => ({ myCards: [...s.myCards, card] })),
 
+  // ✅ New: Remove a card from myCards by card number
+  removeMyCard: (cardNumber: number) =>
+    set((s) => ({
+      myCards: s.myCards.filter((c) => c.card_number !== cardNumber),
+    })),
+
   setMyCards: (cards) => set({ myCards: cards }),
 
   markCalled: (display) =>
@@ -128,7 +137,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   reset: () => set(initialState),
 
-  // ✅ Reserved cards management
+  // Reserved cards management
   setReservedCardsList: (cards: number[]) => set({ reservedCards: cards }),
 
   addReservedCard: (card: number) =>
@@ -143,7 +152,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       reservedCards: s.reservedCards.filter((c) => c !== card),
     })),
 
-  // Aliases for convenience
   reserveCard: (card: number) =>
     set((s) => ({
       reservedCards: s.reservedCards.includes(card)
@@ -161,9 +169,5 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...initialState,
       gameId: s.gameId,
       status: "waiting",
-      reservedCards: [],
-      myCards: [],
-      called: [],
-      winner: null,
     })),
 }));

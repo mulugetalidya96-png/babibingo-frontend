@@ -12,13 +12,15 @@ export function useWebSocket(userId: number | undefined) {
   const {
     setGameState,
     addMyCard,
+    removeMyCard, // ✅ Added
     markCalled,
     setWinner,
     setMyCards,
-    setReservedCardsList, // ✅ Now exists
-    addReservedCard, // ✅ Now exists
-    removeReservedCard, // ✅ Now exists
-    reserveCard, // ✅ For the current user's cards
+    setReservedCardsList,
+    addReservedCard,
+    removeReservedCard,
+    reserveCard,
+    unReserveCard, // ✅ Added
     resetForNewGame,
   } = useGameStore();
 
@@ -86,23 +88,22 @@ export function useWebSocket(userId: number | undefined) {
               if (data.state.my_cards) {
                 setMyCards(data.state.my_cards);
               }
-              // ✅ Use setReservedCardsList for initial state
               setReservedCardsList(data.state.reserved_cards ?? []);
             }
             break;
 
           case "card.reserved":
-            // ✅ Only process if the card belongs to the current user
+            // Only process if the card belongs to the current user
             if (data.user_id === userId) {
               console.log(`[WS] Card ${data.card_number} reserved by you`);
               if (data.card_number !== undefined) {
-                reserveCard(data.card_number); // ✅ Add to "My Cards"
+                reserveCard(data.card_number);
               }
               if (data.card) {
                 addMyCard(data.card);
               }
             } else {
-              // ✅ Update the reserved cards list for display (other users)
+              // Update the reserved cards list for display (other users)
               console.log(
                 `[WS] Card ${data.card_number} reserved by user ${data.user_id}`,
               );
@@ -116,7 +117,11 @@ export function useWebSocket(userId: number | undefined) {
             // ✅ Only process if the card belongs to the current user
             if (data.user_id === userId) {
               console.log(`[WS] Card ${data.card_number} cancelled by you`);
-              // Remove from my cards (you need to handle this)
+              // ✅ Remove from my cards and reserved cards
+              if (data.card_number !== undefined) {
+                removeMyCard(data.card_number); // ✅ Remove from myCards
+                unReserveCard(data.card_number); // ✅ Remove from reservedCards
+              }
             } else {
               // Update reserved cards list for others
               if (data.card_number !== undefined) {
@@ -189,6 +194,7 @@ export function useWebSocket(userId: number | undefined) {
     userId,
     setGameState,
     addMyCard,
+    removeMyCard, // ✅ Added
     markCalled,
     setWinner,
     setMyCards,
@@ -196,6 +202,7 @@ export function useWebSocket(userId: number | undefined) {
     addReservedCard,
     removeReservedCard,
     reserveCard,
+    unReserveCard, // ✅ Added
     resetForNewGame,
   ]);
 
