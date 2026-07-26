@@ -22,6 +22,7 @@ interface GameState {
 
   // Winner
   winner: WinnerInfo | null;
+  winners: WinnerInfo[];
   nextGameTimer: number;
 
   // UI
@@ -41,6 +42,7 @@ interface GameState {
         | "setMyCards"
         | "markCalled"
         | "setWinner"
+        | "setWinners"
         | "toggleSound"
         | "setCurrentCall"
         | "reset"
@@ -60,6 +62,7 @@ interface GameState {
   setMyCards: (cards: GameCard[]) => void;
   markCalled: (display: string) => void;
   setWinner: (winner: WinnerInfo | null) => void;
+  setWinners: (winners: WinnerInfo[]) => void; // ✅ NEW
   setNextGameTimer: (timer: number) => void;
   toggleSound: () => void;
   setCurrentCall: (call: string | null) => void;
@@ -88,6 +91,7 @@ const initialState = {
   myCards: [],
   selectedCards: [],
   winner: null,
+  winners: [],
   reservedCards: [],
   nextGameTimer: 0,
   soundEnabled: true,
@@ -128,6 +132,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     })),
 
   setWinner: (winner) => set({ winner }),
+  setWinners: (winners) => set({ winners }),
 
   setNextGameTimer: (timer) => set({ nextGameTimer: timer }),
 

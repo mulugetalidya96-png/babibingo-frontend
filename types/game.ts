@@ -62,6 +62,7 @@ export interface WSResponse {
   state?: GameStateResponse;
   message?: string;
   winner?: WinnerInfo;
+  winners?: WinnerInfo[];
   call_number?: number;
   call_display?: string;
   called?: string[];

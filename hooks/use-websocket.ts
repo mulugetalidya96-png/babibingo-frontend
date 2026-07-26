@@ -15,6 +15,7 @@ export function useWebSocket(userId: number | undefined) {
     removeMyCard, // ✅ Added
     markCalled,
     setWinner,
+    setWinners, // ✅ NEW
     setMyCards,
     setReservedCardsList,
     addReservedCard,
