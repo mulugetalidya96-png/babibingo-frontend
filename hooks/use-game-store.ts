@@ -42,6 +42,12 @@ interface GameState {
         | "toggleSound"
         | "setCurrentCall"
         | "reset"
+        | "resetForNewGame"
+        | "setReservedCardsList"
+        | "addReservedCard"
+        | "removeReservedCard"
+        | "reserveCard"
+        | "unReserveCard"
       >
     >,
   ) => void;
@@ -55,8 +61,14 @@ interface GameState {
   toggleSound: () => void;
   setCurrentCall: (call: string | null) => void;
   reset: () => void;
-  setReservedCards: (cards: number[]) => void;
-  reserveCard: (card: number) => void;
+
+  // ✅ Reserved cards management
+  setReservedCardsList: (cards: number[]) => void; // Set entire list
+  addReservedCard: (card: number) => void; // Add single card
+  removeReservedCard: (card: number) => void; // Remove single card
+  reserveCard: (card: number) => void; // Alias for addReservedCard
+  unReserveCard: (card: number) => void; // Alias for removeReservedCard
+
   resetForNewGame: () => void;
 }
 
@@ -115,17 +127,43 @@ export const useGameStore = create<GameState>((set, get) => ({
   setCurrentCall: (call) => set({ currentCall: call }),
 
   reset: () => set(initialState),
-  setReservedCards: (cards) => set({ reservedCards: cards }),
+
+  // ✅ Reserved cards management
+  setReservedCardsList: (cards: number[]) => set({ reservedCards: cards }),
+
+  addReservedCard: (card: number) =>
+    set((s) => ({
+      reservedCards: s.reservedCards.includes(card)
+        ? s.reservedCards
+        : [...s.reservedCards, card],
+    })),
+
+  removeReservedCard: (card: number) =>
+    set((s) => ({
+      reservedCards: s.reservedCards.filter((c) => c !== card),
+    })),
+
+  // Aliases for convenience
+  reserveCard: (card: number) =>
+    set((s) => ({
+      reservedCards: s.reservedCards.includes(card)
+        ? s.reservedCards
+        : [...s.reservedCards, card],
+    })),
+
+  unReserveCard: (card: number) =>
+    set((s) => ({
+      reservedCards: s.reservedCards.filter((c) => c !== card),
+    })),
+
   resetForNewGame: () =>
     set((s) => ({
       ...initialState,
       gameId: s.gameId,
       status: "waiting",
-    })),
-  reserveCard: (card) =>
-    set((s) => ({
-      reservedCards: s.reservedCards.includes(card)
-        ? s.reservedCards
-        : [...s.reservedCards, card],
+      reservedCards: [],
+      myCards: [],
+      called: [],
+      winner: null,
     })),
 }));

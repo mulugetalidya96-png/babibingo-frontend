@@ -15,8 +15,10 @@ export function useWebSocket(userId: number | undefined) {
     markCalled,
     setWinner,
     setMyCards,
-    setReservedCards,
-    reserveCard,
+    setReservedCardsList, // ✅ Now exists
+    addReservedCard, // ✅ Now exists
+    removeReservedCard, // ✅ Now exists
+    reserveCard, // ✅ For the current user's cards
     resetForNewGame,
   } = useGameStore();
 
@@ -39,7 +41,6 @@ export function useWebSocket(userId: number | undefined) {
         switch (data.type) {
           case "game.new":
             resetForNewGame();
-
             setGameState({
               gameId: data.game_id || null,
               status: "waiting",
@@ -50,8 +51,8 @@ export function useWebSocket(userId: number | undefined) {
               stake: data.stake ?? 20,
               reservedCards: [],
             });
-
             break;
+
           case "timer.tick":
             setGameState({
               gameId: data.game_id || null,
@@ -85,17 +86,45 @@ export function useWebSocket(userId: number | undefined) {
               if (data.state.my_cards) {
                 setMyCards(data.state.my_cards);
               }
-              setReservedCards(data.state.reserved_cards ?? []);
+              // ✅ Use setReservedCardsList for initial state
+              setReservedCardsList(data.state.reserved_cards ?? []);
             }
             break;
+
           case "card.reserved":
-            if (data.card_number !== undefined) {
-              reserveCard(data.card_number);
-            }
-            if (data.card) {
-              addMyCard(data.card);
+            // ✅ Only process if the card belongs to the current user
+            if (data.user_id === userId) {
+              console.log(`[WS] Card ${data.card_number} reserved by you`);
+              if (data.card_number !== undefined) {
+                reserveCard(data.card_number); // ✅ Add to "My Cards"
+              }
+              if (data.card) {
+                addMyCard(data.card);
+              }
+            } else {
+              // ✅ Update the reserved cards list for display (other users)
+              console.log(
+                `[WS] Card ${data.card_number} reserved by user ${data.user_id}`,
+              );
+              if (data.card_number !== undefined) {
+                addReservedCard(data.card_number);
+              }
             }
             break;
+
+          case "card.cancelled":
+            // ✅ Only process if the card belongs to the current user
+            if (data.user_id === userId) {
+              console.log(`[WS] Card ${data.card_number} cancelled by you`);
+              // Remove from my cards (you need to handle this)
+            } else {
+              // Update reserved cards list for others
+              if (data.card_number !== undefined) {
+                removeReservedCard(data.card_number);
+              }
+            }
+            break;
+
           case "game.started":
             setGameState({
               status: "calling",
@@ -163,8 +192,11 @@ export function useWebSocket(userId: number | undefined) {
     markCalled,
     setWinner,
     setMyCards,
-    setReservedCards,
+    setReservedCardsList,
+    addReservedCard,
+    removeReservedCard,
     reserveCard,
+    resetForNewGame,
   ]);
 
   const disconnect = useCallback(() => {
