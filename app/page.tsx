@@ -122,7 +122,7 @@ export default function Home() {
 
                   <div className="space-y-3">
                     {myCards.map((card) => (
-                      <BingoCard key={card.id} card={card} />
+                      <BingoCard key={card.id} card={card} size="sm" />
                     ))}
                   </div>
                 </>
@@ -174,31 +174,56 @@ export default function Home() {
                         key={card.id}
                         card={card}
                         calledNumbers={calledNumbers}
+                        size="md"
                       />
                     ))}
 
                     <button
                       onClick={handleClaimBingo}
                       className="
-                w-full
-                bg-gradient-to-r
-                from-purple-600
-                to-purple-500
-                hover:from-purple-500
-                hover:to-purple-400
-                active:scale-[0.98]
-                text-white
-                font-black
-                py-3.5
-                rounded-xl
-                text-lg
-                tracking-widest
-                transition-all
-                shadow-lg
-                shadow-purple-900/40
-              "
+    w-full
+    bg-gradient-to-r
+    from-purple-600
+    to-purple-500
+    hover:from-purple-500
+    hover:to-purple-400
+    active:scale-[0.97]
+    text-white
+    font-black
+    py-2.5 sm:py-3 md:py-3.5
+    px-4
+    rounded-xl
+    text-base sm:text-lg md:text-xl
+    tracking-[0.15em] sm:tracking-[0.2em] md:tracking-widest
+    transition-all
+    duration-200
+    shadow-lg
+    shadow-purple-900/40
+    hover:shadow-purple-900/60
+    hover:shadow-xl
+    disabled:opacity-50
+    disabled:cursor-not-allowed
+    disabled:hover:shadow-purple-900/40
+    min-h-[44px] sm:min-h-[48px] md:min-h-[52px]
+    touch-manipulation
+    relative
+    overflow-hidden
+  "
+                      disabled={myCards.length === 0}
                     >
-                      BINGO!
+                      {/* Optional: Shine animation */}
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        <span className="text-yellow-300 text-base sm:text-lg md:text-xl">
+                          ⭐
+                        </span>
+                        BINGO!
+                        <span className="text-yellow-300 text-base sm:text-lg md:text-xl">
+                          ⭐
+                        </span>
+                      </span>
+
+                      {/* Optional: Hover shine effect */}
+                      <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     </button>
                   </div>
                 )}

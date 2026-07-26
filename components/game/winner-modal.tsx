@@ -3,35 +3,141 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/hooks/use-game-store";
 import { BingoCard } from "./bingo-card";
-import { Trophy, Users, Crown } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 export function WinnerModal() {
-  const { winner, winners, nextGameTimer } = useGameStore();
+  const { winner, winners, nextGameTimer, myCards, called } = useGameStore();
 
-  // If no winner and game is still going, don't show
+  // If no winner, don't show
   if (!winner && winners.length === 0) return null;
 
   // Use winners array if available, otherwise use single winner
   const allWinners = winners.length > 0 ? winners : winner ? [winner] : [];
-  const hasMultipleWinners = allWinners.length > 1;
+  const primaryWinner = allWinners[0];
 
-  // Build winning card mock data
-  const winningCard = {
+  // ✅ Find the actual winning card from user's cards
+  const winningCardData = myCards.find(
+    (card) => card.card_number === primaryWinner?.card_number,
+  );
+
+  // ✅ Get called numbers as integers for marking
+  const calledNumbers = called.map((c) => parseInt(c.slice(1)));
+
+  // ✅ Use real card data if available, otherwise fallback
+  const winningCard = winningCardData || {
     id: "winner-card",
-    card_number: winner?.card_number || 0,
+    card_number: primaryWinner?.card_number || 0,
     card_data: {
       B: [2, 7, 11, 15, 9],
       I: [25, 28, 16, 27, 29],
       N: [38, 34, null, 39, 44],
       G: [50, 51, 59, 60, 46],
       O: [61, 67, 70, 62, 66],
-      card_id: winner?.card_number || 0,
+      card_id: primaryWinner?.card_number || 0,
     },
-    marked_numbers: [9, 29, 44, 46, 66, 27, 51, 61, 50, 34],
+    marked_numbers: [],
     is_winner: true,
   };
 
-  const winningCells = new Set(["4-0", "4-1", "4-2", "4-3", "4-4"]);
+  // ✅ Calculate winning cells based on the pattern
+  const getWinningCells = (card: typeof winningCard) => {
+    const cells = new Set<string>();
+    const grid = [
+      card.card_data.B,
+      card.card_data.I,
+      card.card_data.N,
+      card.card_data.G,
+      card.card_data.O,
+    ];
+
+    // Check horizontal wins
+    for (let row = 0; row < 5; row++) {
+      let win = true;
+      for (let col = 0; col < 5; col++) {
+        const num = grid[col][row];
+        if (
+          num !== null &&
+          !calledNumbers.includes(num) &&
+          !winningCard.marked_numbers?.includes(num)
+        ) {
+          win = false;
+          break;
+        }
+      }
+      if (win) {
+        for (let col = 0; col < 5; col++) {
+          cells.add(`${row}-${col}`);
+        }
+        return cells;
+      }
+    }
+
+    // Check vertical wins
+    for (let col = 0; col < 5; col++) {
+      let win = true;
+      for (let row = 0; row < 5; row++) {
+        const num = grid[col][row];
+        if (
+          num !== null &&
+          !calledNumbers.includes(num) &&
+          !winningCard.marked_numbers?.includes(num)
+        ) {
+          win = false;
+          break;
+        }
+      }
+      if (win) {
+        for (let row = 0; row < 5; row++) {
+          cells.add(`${row}-${col}`);
+        }
+        return cells;
+      }
+    }
+
+    // Check diagonal (top-left to bottom-right)
+    let win = true;
+    for (let i = 0; i < 5; i++) {
+      const num = grid[i][i];
+      if (
+        num !== null &&
+        !calledNumbers.includes(num) &&
+        !winningCard.marked_numbers?.includes(num)
+      ) {
+        win = false;
+        break;
+      }
+    }
+    if (win) {
+      for (let i = 0; i < 5; i++) {
+        cells.add(`${i}-${i}`);
+      }
+      return cells;
+    }
+
+    // Check diagonal (top-right to bottom-left)
+    win = true;
+    for (let i = 0; i < 5; i++) {
+      const num = grid[4 - i][i];
+      if (
+        num !== null &&
+        !calledNumbers.includes(num) &&
+        !winningCard.marked_numbers?.includes(num)
+      ) {
+        win = false;
+        break;
+      }
+    }
+    if (win) {
+      for (let i = 0; i < 5; i++) {
+        cells.add(`${i}-${4 - i}`);
+      }
+      return cells;
+    }
+
+    return cells;
+  };
+
+  const winningCells = getWinningCells(winningCard);
 
   return (
     <AnimatePresence>
@@ -39,172 +145,110 @@ export function WinnerModal() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       >
         <motion.div
-          initial={{ scale: 0.5, y: 50 }}
+          initial={{ scale: 0.8, y: 30 }}
           animate={{ scale: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="w-full max-w-md mx-auto"
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          className="w-full max-w-sm bg-[#1a1d2e] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
         >
-          {/* Trophy */}
-          <div className="flex justify-center mb-1 sm:mb-2">
+          {/* Header - WINNER! */}
+          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 py-4 px-6 text-center border-b border-white/5">
             <motion.div
-              animate={{ rotate: [0, -10, 10, -10, 0], y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="flex justify-center mb-1"
             >
-              {hasMultipleWinners ? (
-                <Users
-                  size={40}
-                  className="text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]"
-                />
-              ) : (
-                <Trophy
-                  size={48}
-                  className="text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]"
-                />
-              )}
+              <Trophy size={36} className="text-yellow-400" />
             </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-3xl font-black text-yellow-400 tracking-wider"
+            >
+              WINNER!
+            </motion.h2>
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-2xl sm:text-3xl font-black text-center text-yellow-400 mb-3 sm:mb-4 tracking-wider"
-          >
-            {hasMultipleWinners
-              ? `🎉 ${allWinners.length} WINNERS!`
-              : "🎉 BINGO!"}
-          </motion.h2>
-
-          {/* ✅ Winners List - Scrollable for many winners */}
+          {/* Winner Info */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[#1a1d2e] rounded-2xl p-3 sm:p-5 border border-white/5 mb-3 sm:mb-4 max-h-[40vh] overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="p-5 text-center"
           >
-            {allWinners.map((w, index) => (
-              <motion.div
-                key={w.user_id || index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.08 }}
-                className={`py-2 sm:py-2.5 ${index > 0 ? "border-t border-white/5" : ""}`}
-              >
-                <div className="flex items-center justify-between gap-2 px-1">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {/* Crown for first winner */}
-                    {index === 0 && (
-                      <Crown
-                        size={14}
-                        className="text-yellow-400 flex-shrink-0"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm sm:text-base font-semibold text-white truncate">
-                        {w.name}
-                      </div>
-                      <div className="text-xs text-gray-400 font-mono truncate">
-                        {w.phone}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-base sm:text-lg font-bold text-green-400">
-                      +{w.prize.toFixed(0)} ETB
-                    </div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">
-                      #{w.card_number}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            {/* Name */}
+            <div className="text-xl font-bold text-white mb-0.5">
+              {primaryWinner?.name || "Unknown"}
+            </div>
+
+            {/* Phone */}
+            <div className="text-sm text-gray-400 font-mono mb-3">
+              {primaryWinner?.phone || "N/A"}
+            </div>
+
+            {/* Prize */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring" }}
+              className="text-3xl font-black text-green-400 mb-3"
+            >
+              +{primaryWinner?.prize?.toFixed(0) || 0} ETB
+            </motion.div>
+
+            {/* Card Number */}
+            <div className="text-xs text-gray-500 mb-3">
+              Card #{primaryWinner?.card_number || 0}
+            </div>
+
+            {/* Bingo Card - Using real data */}
+            <div className="bg-[#111424] rounded-xl p-3 border border-white/5">
+              <BingoCard
+                card={winningCard}
+                calledNumbers={calledNumbers}
+                highlightWin={true}
+                winningCells={winningCells}
+                size="sm"
+              />
+            </div>
+
+            {/* Pattern Display */}
+            {primaryWinner?.pattern && (
+              <div className="mt-2 text-xs text-gray-500">
+                Pattern: {primaryWinner.pattern}
+              </div>
+            )}
+
+            {/* Multiple winners indicator */}
+            {allWinners.length > 1 && (
+              <div className="mt-3 text-xs text-yellow-400/70">
+                + {allWinners.length - 1} more winner
+                {allWinners.length - 1 > 1 ? "s" : ""}
+              </div>
+            )}
           </motion.div>
 
-          {/* ✅ Show winning cards - Responsive grid for multiple cards */}
-          {winner && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="bg-[#1a1d2e] rounded-2xl p-3 sm:p-5 border border-white/5"
-            >
-              <div className="text-xs sm:text-sm text-gray-400 mb-2 text-center">
-                Winning Card{hasMultipleWinners ? "s" : ""}
-              </div>
-
-              {/* ✅ Responsive grid for multiple cards */}
-              <div
-                className={`
-                grid gap-2 sm:gap-3
-                ${hasMultipleWinners ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}
-              `}
-              >
-                {/* Show up to 2 winning cards */}
-                {allWinners.slice(0, 2).map((w, idx) => (
-                  <motion.div
-                    key={w.user_id || idx}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 + idx * 0.1 }}
-                    className="bg-[#111424] rounded-xl p-2 sm:p-3 border border-white/5"
-                  >
-                    <div className="text-[10px] text-gray-500 text-center mb-1">
-                      {w.name} • #{w.card_number}
-                    </div>
-                    <div className="scale-75 sm:scale-90 transform origin-top">
-                      <BingoCard
-                        card={winningCard}
-                        calledNumbers={winningCard.marked_numbers}
-                        highlightWin={true}
-                        winningCells={winningCells}
-                        size="sm"
-                      />
-                    </div>
-                    <div className="text-[10px] text-gray-500 text-center mt-1">
-                      {w.pattern || "Horizontal"}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* ✅ Show "more" indicator if more than 2 winners */}
-              {hasMultipleWinners && allWinners.length > 2 && (
-                <div className="text-center text-xs text-gray-500 mt-2">
-                  + {allWinners.length - 2} more winner
-                  {allWinners.length - 2 > 1 ? "s" : ""}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Next game countdown */}
+          {/* Countdown */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-4 sm:mt-6 text-center"
+            className="px-5 pb-5 text-center"
           >
-            <div className="text-xs sm:text-sm text-gray-400 mb-1">
-              Next game in
+            <div className="text-xs text-gray-500 mb-1">Next game in</div>
+            <div className="text-4xl font-black text-white">
+              {nextGameTimer || 0}
             </div>
-            <motion.div
-              key={nextGameTimer}
-              initial={{ scale: 1.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="text-4xl sm:text-5xl font-black text-white mb-2"
-            >
-              {nextGameTimer}s
-            </motion.div>
-            <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-gray-800 rounded-full h-1 mt-2 overflow-hidden">
               <motion.div
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full rounded-full"
                 initial={{ width: "100%" }}
                 animate={{ width: "0%" }}
-                transition={{ duration: nextGameTimer, ease: "linear" }}
+                transition={{ duration: nextGameTimer || 10, ease: "linear" }}
               />
             </div>
           </motion.div>
