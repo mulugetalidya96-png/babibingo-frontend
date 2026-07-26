@@ -11,7 +11,7 @@ import { BingoBoard } from "@/components/game/bingo-board";
 import { LastCalled } from "@/components/game/last-called";
 import { WinnerModal } from "@/components/game/winner-modal";
 import { AnimatePresence, motion } from "framer-motion";
-import { Volume2, VolumeX, RefreshCw } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useBingoSound } from "@/hooks/use-bingo-sound";
 
 export default function Home() {
@@ -50,8 +50,9 @@ export default function Home() {
     send({ type: "bingo.claim", card_id: myCards[0].id });
   }, [myCards, send]);
 
-  const calledNumbers = (called ?? []).map((c) => parseInt(c.slice(1)));
-
+  const calledNumbers = useGameStore((s) =>
+    (s.called ?? []).map((c) => parseInt(c.slice(1))),
+  );
   useEffect(() => {
     if (!called || called.length === 0) return;
 
@@ -65,6 +66,9 @@ export default function Home() {
     playNumber(latest);
   }, [called, playNumber]);
 
+  const isGameActive = status === "calling";
+  const isLobby = status === "waiting" || status === "idle";
+
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -73,69 +77,36 @@ export default function Home() {
     );
   }
 
-  const isGameActive = status === "calling";
-  const isLobby = status === "waiting" || status === "idle";
-
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
-      {/* ✅ Only show top bar in LOBBY, hide during game */}
-      {!isGameActive && (
-        <div className="flex items-center justify-between px-4 py-2 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white text-sm font-black">B</span>
-            </div>
-            <div>
-              <span className="font-bold text-sm leading-tight text-white">
-                BabiBingo
+      {/* Top bar - Show both in lobby and game */}
+      <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-lg">
+            <span className="text-white text-sm font-black">B</span>
+          </div>
+          <div>
+            <span className="font-bold text-lg leading-tight text-white">
+              BabiBingo
+            </span>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-[10px] text-gray-400">
+                {isLobby ? "Lobby" : "Live"}
               </span>
-              <div className="flex items-center gap-1">
-                <div className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[8px] text-gray-400">
-                  {isLobby ? "Lobby" : "Live"}
-                </span>
-              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="text-gray-400 hover:text-white transition-colors p-1">
-              <RefreshCw size={16} />
-            </button>
-            <button
-              onClick={toggleSound}
-              className="text-gray-400 hover:text-white transition-colors p-1"
-            >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-          </div>
         </div>
-      )}
+        <button
+          onClick={toggleSound}
+          className="text-gray-400 hover:text-white transition-colors p-2"
+        >
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
+      </div>
 
-      {/* ✅ Game Stats - Using REAL data from store */}
-      {isLobby && (
-        <div className="grid grid-cols-4 gap-1 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
-          <div className="text-center">
-            <div className="text-[10px] text-gray-500 font-medium">WINNER</div>
-            <div className="text-sm font-bold text-green-400">
-              {pool > 0 ? `${pool.toFixed(0)} ETB` : "—"}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-[10px] text-gray-500 font-medium">PLAYERS</div>
-            <div className="text-sm font-bold text-white">{players || 0}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-[10px] text-gray-500 font-medium">STAKE</div>
-            <div className="text-sm font-bold text-white">{stake} ETB</div>
-          </div>
-          <div className="text-center">
-            <div className="text-[10px] text-gray-500 font-medium">CALL</div>
-            <div className="text-sm font-bold text-yellow-400">
-              {called ? `${called.length}/75` : "0/75"}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ✅ GameHeader - ONLY in LOBBY state */}
+      {isLobby && <GameHeader />}
 
       <AnimatePresence mode="wait">
         {/* ===== LOBBY / CARD SELECTION ===== */}
@@ -148,18 +119,20 @@ export default function Home() {
             transition={{ duration: 0.3 }}
             className="h-[calc(100vh-180px)] flex flex-col"
           >
-            {/* Card selection */}
+            {/* Card selection - 60% for grid, 40% for my cards */}
             <div className="h-[55%] overflow-hidden">
               <CardGrid send={send} />
             </div>
 
-            {/* My cards */}
+            {/* My cards - 45% */}
             <div className="h-[45%] overflow-y-auto px-3 pb-4">
               {myCards.length > 0 ? (
                 <>
                   <div className="text-center text-xs text-gray-400 font-medium mb-2">
                     Your cards ({myCards.length}/{2})
                   </div>
+
+                  {/* ✅ Smaller cards in a grid */}
                   <div className="grid grid-cols-2 gap-2">
                     {myCards.map((card) => (
                       <BingoCard key={card.id} card={card} size="xs" />
@@ -183,10 +156,9 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.3 }}
-            className="px-2 mt-2"
           >
-            {/* ✅ Game Stats during game - Using REAL data */}
-            <div className="grid grid-cols-4 gap-1 px-2 py-2 bg-[#151725]/50 rounded-xl mb-3">
+            {/* ✅ Game Stats - Shown during game */}
+            <div className="grid grid-cols-4 gap-1 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
               <div className="text-center">
                 <div className="text-[10px] text-gray-500 font-medium">
                   WINNER
@@ -219,22 +191,21 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Last Called - Large display */}
-            <div className="mb-3">
-              <LastCalled />
-            </div>
-
-            {/* Game Grid - Bingo Board + Cards side by side */}
-            <div className="flex gap-2">
+            {/* Game area */}
+            <div className="flex gap-2.5 px-3 mt-3">
               {/* LEFT - Bingo Board */}
               <div className="w-[42%]">
                 <BingoBoard />
               </div>
 
               {/* RIGHT - Player Cards */}
-              <div className="flex-1 flex flex-col gap-2">
+              <div className="flex-1 flex flex-col gap-3">
+                {/* Last Called */}
+                <LastCalled />
+
+                {/* Cards */}
                 {myCards.length > 0 && (
-                  <>
+                  <div className="space-y-3">
                     {myCards.map((card) => (
                       <BingoCard
                         key={card.id}
@@ -244,7 +215,6 @@ export default function Home() {
                       />
                     ))}
 
-                    {/* Auto Mark & BINGO Button */}
                     <div className="flex gap-2">
                       <button className="flex-1 bg-[#1a1d2e] hover:bg-[#252a3d] text-gray-300 font-bold py-2 rounded-lg text-sm transition-colors border border-white/5">
                         AUTO MARK
@@ -257,11 +227,11 @@ export default function Home() {
                         BINGO!
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {myCards.length === 0 && (
-                  <div className="flex items-center justify-center h-full text-gray-600 text-sm">
+                  <div className="flex items-center justify-center h-full text-gray-600">
                     Waiting for card...
                   </div>
                 )}
