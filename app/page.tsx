@@ -107,36 +107,32 @@ export default function Home() {
             transition={{ duration: 0.3 }}
             className="h-[calc(100vh-120px)] flex flex-col"
           >
-            {/* Card selection - 50% */}
-            <div className="h-1/2 overflow-hidden">
+            {/* Card selection - 60% for grid, 40% for my cards */}
+            <div className="h-[55%] overflow-hidden">
               <CardGrid send={send} />
             </div>
 
-            {/* My cards - 50% */}
-            <div className="h-1/2 overflow-y-auto px-3 pb-4">
+            {/* My cards - 45% */}
+            <div className="h-[45%] overflow-y-auto px-3 pb-4">
               {myCards.length > 0 ? (
                 <>
-                  <div className="text-center text-sm text-gray-400 font-medium mb-3">
-                    Your cards
+                  <div className="text-center text-xs text-gray-400 font-medium mb-2">
+                    Your cards ({myCards.length}/{2})
                   </div>
 
-                  <div className="space-y-3">
+                  {/* ✅ Smaller cards in a horizontal scroll or compact grid */}
+                  <div className="grid grid-cols-2 gap-2">
                     {myCards.map((card) => (
-                      <BingoCard key={card.id} card={card} size="sm" />
+                      <BingoCard
+                        key={card.id}
+                        card={card}
+                        size="xs" // ✅ Even smaller size
+                      />
                     ))}
                   </div>
                 </>
               ) : (
-                <div
-                  className="
-          h-full
-          flex
-          items-center
-          justify-center
-          text-gray-600
-          text-sm
-        "
-                >
+                <div className="h-full flex items-center justify-center text-gray-600 text-sm">
                   Reserve a card to start playing
                 </div>
               )}
@@ -144,7 +140,6 @@ export default function Home() {
           </motion.div>
         )}
 
-        {/* ===== LIVE GAME ===== */}
         {/* ===== LIVE GAME ===== */}
         {status === "calling" && (
           <motion.div
@@ -174,44 +169,43 @@ export default function Home() {
                         key={card.id}
                         card={card}
                         calledNumbers={calledNumbers}
-                        size="md"
+                        size="sm" // ✅ Smaller during game too
                       />
                     ))}
 
                     <button
                       onClick={handleClaimBingo}
                       className="
-    w-full
-    bg-gradient-to-r
-    from-purple-600
-    to-purple-500
-    hover:from-purple-500
-    hover:to-purple-400
-    active:scale-[0.97]
-    text-white
-    font-black
-    py-2.5 sm:py-3 md:py-3.5
-    px-4
-    rounded-xl
-    text-base sm:text-lg md:text-xl
-    tracking-[0.15em] sm:tracking-[0.2em] md:tracking-widest
-    transition-all
-    duration-200
-    shadow-lg
-    shadow-purple-900/40
-    hover:shadow-purple-900/60
-    hover:shadow-xl
-    disabled:opacity-50
-    disabled:cursor-not-allowed
-    disabled:hover:shadow-purple-900/40
-    min-h-[44px] sm:min-h-[48px] md:min-h-[52px]
-    touch-manipulation
-    relative
-    overflow-hidden
-  "
+                        w-full
+                        bg-gradient-to-r
+                        from-purple-600
+                        to-purple-500
+                        hover:from-purple-500
+                        hover:to-purple-400
+                        active:scale-[0.97]
+                        text-white
+                        font-black
+                        py-2.5 sm:py-3 md:py-3.5
+                        px-4
+                        rounded-xl
+                        text-base sm:text-lg md:text-xl
+                        tracking-[0.15em] sm:tracking-[0.2em] md:tracking-widest
+                        transition-all
+                        duration-200
+                        shadow-lg
+                        shadow-purple-900/40
+                        hover:shadow-purple-900/60
+                        hover:shadow-xl
+                        disabled:opacity-50
+                        disabled:cursor-not-allowed
+                        disabled:hover:shadow-purple-900/40
+                        min-h-[44px] sm:min-h-[48px] md:min-h-[52px]
+                        touch-manipulation
+                        relative
+                        overflow-hidden
+                      "
                       disabled={myCards.length === 0}
                     >
-                      {/* Optional: Shine animation */}
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span className="text-yellow-300 text-base sm:text-lg md:text-xl">
                           ⭐
@@ -221,8 +215,6 @@ export default function Home() {
                           ⭐
                         </span>
                       </span>
-
-                      {/* Optional: Hover shine effect */}
                       <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     </button>
                   </div>

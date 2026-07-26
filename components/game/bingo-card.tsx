@@ -19,7 +19,7 @@ interface BingoCardProps {
   calledNumbers?: number[];
   highlightWin?: boolean;
   winningCells?: Set<string>;
-  size?: "sm" | "md" | "lg"; // ✅ New size prop
+  size?: "sm" | "md" | "lg" | "xs"; // ✅ New size prop
 }
 
 export function BingoCard({
@@ -62,6 +62,14 @@ export function BingoCard({
 
   // ✅ Size configurations
   const sizeConfig = {
+    xs: {
+      container: "p-1",
+      cardNumber: "text-[6px]",
+      header: "text-[6px] py-0.5",
+      cell: "text-[5px]",
+      gap: "gap-[1px]",
+      icon: 8,
+    },
     sm: {
       container: "p-1.5 sm:p-2 mx-1 sm:mx-2",
       cardNumber: "text-[10px] sm:text-xs",
