@@ -15,29 +15,38 @@ export function WinnerModal() {
   const allWinners = winners.length > 0 ? winners : winner ? [winner] : [];
   const primaryWinner = allWinners[0];
 
-  // ✅ Find the actual winning card from user's cards
-  const winningCardData = myCards.find(
+  // ✅ PRIORITY 1: Use the card from the winner event
+  const cardFromWinner = primaryWinner?.card;
+
+  // ✅ PRIORITY 2: Find in myCards (for real users)
+  const cardFromMyCards = myCards.find(
     (card) => card.card_number === primaryWinner?.card_number,
   );
+
+  // ✅ Use the first available card data
+  const winningCard = cardFromWinner ||
+    cardFromMyCards || {
+      id: "winner-card",
+      card_number: primaryWinner?.card_number || 0,
+      card_data: {
+        B: [2, 7, 11, 15, 9],
+        I: [25, 28, 16, 27, 29],
+        N: [38, 34, null, 39, 44],
+        G: [50, 51, 59, 60, 46],
+        O: [61, 67, 70, 62, 66],
+        card_id: primaryWinner?.card_number || 0,
+      },
+      marked_numbers: [],
+      is_winner: true,
+    };
 
   // ✅ Get called numbers as integers for marking
   const calledNumbers = called.map((c) => parseInt(c.slice(1)));
 
-  // ✅ Use real card data if available, otherwise fallback
-  const winningCard = winningCardData || {
-    id: "winner-card",
-    card_number: primaryWinner?.card_number || 0,
-    card_data: {
-      B: [2, 7, 11, 15, 9],
-      I: [25, 28, 16, 27, 29],
-      N: [38, 34, null, 39, 44],
-      G: [50, 51, 59, 60, 46],
-      O: [61, 67, 70, 62, 66],
-      card_id: primaryWinner?.card_number || 0,
-    },
-    marked_numbers: [],
-    is_winner: true,
-  };
+  // ✅ Debug: Log what we're using
+  console.log("WinnerModal - Card from winner:", cardFromWinner);
+  console.log("WinnerModal - Card from myCards:", cardFromMyCards);
+  console.log("WinnerModal - Final winning card:", winningCard);
 
   // ✅ Calculate winning cells based on the pattern
   const getWinningCells = (card: typeof winningCard) => {
@@ -169,7 +178,9 @@ export function WinnerModal() {
               transition={{ delay: 0.3 }}
               className="text-3xl font-black text-yellow-400 tracking-wider"
             >
-              WINNER!
+              {allWinners.length > 1
+                ? `${allWinners.length} WINNERS!`
+                : "WINNER!"}
             </motion.h2>
           </div>
 
@@ -180,33 +191,41 @@ export function WinnerModal() {
             transition={{ delay: 0.4 }}
             className="p-5 text-center"
           >
-            {/* Name */}
-            <div className="text-xl font-bold text-white mb-0.5">
-              {primaryWinner?.name || "Unknown"}
-            </div>
+            {/* ✅ Show all winners */}
+            {allWinners.map((w, index) => (
+              <motion.div
+                key={w.user_id || index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                className={`py-2 ${index > 0 ? "border-t border-white/5 mt-2 pt-3" : ""}`}
+              >
+                <div className="text-xl font-bold text-white mb-0.5">
+                  {w.name || "Unknown"}
+                </div>
+                <div className="text-sm text-gray-400 font-mono mb-2">
+                  {w.phone || "N/A"}
+                </div>
+                <div className="text-2xl font-black text-green-400 mb-2">
+                  +{w.prize?.toFixed(0) || 0} ETB
+                </div>
+                <div className="text-xs text-gray-500">
+                  Card #{w.card_number || 0}
+                </div>
+                {w.pattern && (
+                  <div className="text-xs text-yellow-400/60 mt-1">
+                    {w.pattern}
+                  </div>
+                )}
+                {index < allWinners.length - 1 && (
+                  <div className="text-xs text-yellow-400/30 mt-2">✦</div>
+                )}
+              </motion.div>
+            ))}
 
-            {/* Phone */}
-            <div className="text-sm text-gray-400 font-mono mb-3">
-              {primaryWinner?.phone || "N/A"}
-            </div>
-
-            {/* Prize */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: "spring" }}
-              className="text-3xl font-black text-green-400 mb-3"
-            >
-              +{primaryWinner?.prize?.toFixed(0) || 0} ETB
-            </motion.div>
-
-            {/* Card Number */}
-            <div className="text-xs text-gray-500 mb-3">
-              Card #{primaryWinner?.card_number || 0}
-            </div>
-
-            {/* Bingo Card - Using real data */}
-            <div className="bg-[#111424] rounded-xl p-3 border border-white/5">
+            {/* ✅ Bingo Card - Using data from winner */}
+            <div className="mt-4 bg-[#111424] rounded-xl p-3 border border-white/5">
+              <div className="text-xs text-gray-500 mb-2">Winning Card</div>
               <BingoCard
                 card={winningCard}
                 calledNumbers={calledNumbers}
@@ -215,13 +234,6 @@ export function WinnerModal() {
                 size="sm"
               />
             </div>
-
-            {/* Pattern Display */}
-            {primaryWinner?.pattern && (
-              <div className="mt-2 text-xs text-gray-500">
-                Pattern: {primaryWinner.pattern}
-              </div>
-            )}
 
             {/* Multiple winners indicator */}
             {allWinners.length > 1 && (

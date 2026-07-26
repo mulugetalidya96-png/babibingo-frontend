@@ -30,6 +30,7 @@ export interface WinnerInfo {
   prize: number;
   card_number: number;
   pattern: string;
+  card?: GameCard;
 }
 
 export interface GameStateResponse {

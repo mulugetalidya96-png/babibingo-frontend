@@ -169,7 +169,7 @@ export default function Home() {
                         key={card.id}
                         card={card}
                         calledNumbers={calledNumbers}
-                        size="sm" // ✅ Smaller during game too
+                        size="md" // ✅ Smaller during game too
                       />
                     ))}
 
@@ -199,7 +199,7 @@ export default function Home() {
                         disabled:opacity-50
                         disabled:cursor-not-allowed
                         disabled:hover:shadow-purple-900/40
-                        min-h-[44px] sm:min-h-[48px] md:min-h-[52px]
+                        min-h-[24px] sm:min-h-[28px] md:min-h-[32px]
                         touch-manipulation
                         relative
                         overflow-hidden
