@@ -25,8 +25,7 @@ export function useWebSocket(userId: number | undefined) {
     reserveCard,
     unReserveCard,
     resetForNewGame,
-    deselectCard, // ✅ Added for rollback
-    selectedCards, // ✅ Get current selected cards
+    deselectCard,
   } = useGameStore();
 
   const connect = useCallback(() => {
@@ -101,6 +100,13 @@ export function useWebSocket(userId: number | undefined) {
           case "card.reserved":
             if (data.user_id === userId) {
               console.log(`[WS] Card ${data.card_number} reserved by you`);
+
+              // ✅ Clear pending state via CardGrid handler
+              const handlers = (window as any).__cardGridHandlers;
+              if (handlers?.onReservationSuccess) {
+                handlers.onReservationSuccess();
+              }
+
               if (data.card_number !== undefined) {
                 reserveCard(data.card_number);
               }
@@ -191,45 +197,33 @@ export function useWebSocket(userId: number | undefined) {
           case "error":
             console.error("[WS] Error:", data.message);
 
-            // ✅ Check for reservation errors and rollback
+            // ✅ Get CardGrid handlers
+            const handlers = (window as any).__cardGridHandlers;
+
             if (data.message) {
               const msg = data.message.toLowerCase();
 
-              // ✅ Handle insufficient balance - rollback card selection
-              if (msg.includes("insufficient balance")) {
-                // Get the current state and deselect the last card
-                const state = useGameStore.getState();
-                const lastSelected =
-                  state.selectedCards[state.selectedCards.length - 1];
-                if (lastSelected !== undefined) {
-                  deselectCard(lastSelected);
-                  toast.error("Insufficient balance to reserve this card");
+              // ✅ Handle all reservation errors through CardGrid
+              if (
+                msg.includes("insufficient balance") ||
+                msg.includes("card already reserved") ||
+                msg.includes("maximum") ||
+                msg.includes("card data not found") ||
+                msg.includes("failed saving card") ||
+                msg.includes("user not found")
+              ) {
+                // ✅ Use CardGrid's error handler for reservation errors
+                if (handlers?.onReservationError) {
+                  handlers.onReservationError(data.message);
                 } else {
-                  toast.error("Insufficient balance");
-                }
-              }
-              // ✅ Handle card already reserved
-              else if (msg.includes("card already reserved")) {
-                const state = useGameStore.getState();
-                const lastSelected =
-                  state.selectedCards[state.selectedCards.length - 1];
-                if (lastSelected !== undefined) {
-                  deselectCard(lastSelected);
-                  toast.warning("This card is already reserved");
-                } else {
-                  toast.warning("Card already reserved");
-                }
-              }
-              // ✅ Handle maximum cards
-              else if (msg.includes("maximum")) {
-                const state = useGameStore.getState();
-                const lastSelected =
-                  state.selectedCards[state.selectedCards.length - 1];
-                if (lastSelected !== undefined) {
-                  deselectCard(lastSelected);
-                  toast.warning(data.message);
-                } else {
-                  toast.warning(data.message);
+                  // ✅ Fallback: manually deselect last card
+                  const state = useGameStore.getState();
+                  const lastSelected =
+                    state.selectedCards[state.selectedCards.length - 1];
+                  if (lastSelected !== undefined) {
+                    deselectCard(lastSelected);
+                  }
+                  toast.error(data.message);
                 }
               }
               // ✅ Handle other errors
@@ -283,7 +277,7 @@ export function useWebSocket(userId: number | undefined) {
     reserveCard,
     unReserveCard,
     resetForNewGame,
-    deselectCard, // ✅ Added
+    deselectCard,
   ]);
 
   const disconnect = useCallback(() => {

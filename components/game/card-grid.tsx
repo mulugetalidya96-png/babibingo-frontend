@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useGameStore } from "@/hooks/use-game-store";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 export function CardGrid({ send }: { send: (data: object) => void }) {
@@ -17,18 +17,19 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
 
   const [isReserving, setIsReserving] = useState(false);
   const [pendingCard, setPendingCard] = useState<number | null>(null);
+  const [reservationError, setReservationError] = useState<string | null>(null);
 
   const myCardNumbers = new Set(myCards.map((c) => c.card_number));
   const reservedSet = new Set(reservedCards);
 
   const isSelectable = status === "waiting";
 
-  // ✅ Expose error handler to WebSocket
+  // ✅ Handle reservation error - exposed via ref or callback
   const handleReservationError = useCallback(
     (error: string) => {
+      console.log("❌ Reservation error:", error);
       setIsReserving(false);
       if (pendingCard !== null) {
-        // ✅ Deselect the specific card that failed
         deselectCard(pendingCard);
         setPendingCard(null);
       }
@@ -37,11 +38,25 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
     [pendingCard, deselectCard],
   );
 
-  // ✅ Expose success handler
+  // ✅ Handle reservation success
   const handleReservationSuccess = useCallback(() => {
+    console.log("✅ Reservation success:", pendingCard);
     setIsReserving(false);
     setPendingCard(null);
-  }, []);
+  }, [pendingCard]);
+
+  // ✅ Expose handlers to window for WebSocket to call
+  useEffect(() => {
+    // @ts-ignore
+    window.__cardGridHandlers = {
+      onReservationError: handleReservationError,
+      onReservationSuccess: handleReservationSuccess,
+    };
+    return () => {
+      // @ts-ignore
+      delete window.__cardGridHandlers;
+    };
+  }, [handleReservationError, handleReservationSuccess]);
 
   const handleClick = (num: number) => {
     if (!isSelectable || isReserving) return;
@@ -67,16 +82,28 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       return;
     }
 
-    // Local selection first for optimistic UI
+    // ✅ Local selection first for optimistic UI
+    console.log(`📝 Selecting card ${num}`);
     selectCard(num);
     setPendingCard(num);
     setIsReserving(true);
+    setReservationError(null);
 
     // Send reservation to backend
     send({
       type: "card.reserve",
       card_number: num,
     });
+
+    // ✅ Set a timeout to clear reserving state if no response
+    setTimeout(() => {
+      if (isReserving && pendingCard === num) {
+        console.log("⏰ Reservation timeout for card", num);
+        setIsReserving(false);
+        setPendingCard(null);
+        // Don't deselect on timeout - let the user retry
+      }
+    }, 10000);
   };
 
   const getCellClass = (num: number) => {
@@ -116,6 +143,11 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
         {isReserving && (
           <span className="ml-2 text-xs text-blue-400 animate-pulse">
             ⏳ Reserving...
+          </span>
+        )}
+        {reservationError && (
+          <span className="ml-2 text-xs text-red-400">
+            ❌ {reservationError}
           </span>
         )}
       </div>
