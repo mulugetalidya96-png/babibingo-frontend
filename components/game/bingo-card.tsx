@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Circle, CircleCheck } from "lucide-react";
 import type { GameCard } from "@/types/game";
 
 const LETTERS = ["B", "I", "N", "G", "O"] as const;
@@ -19,7 +19,8 @@ interface BingoCardProps {
   calledNumbers?: number[];
   highlightWin?: boolean;
   winningCells?: Set<string>;
-  size?: "sm" | "md" | "lg" | "xs"; // ✅ New size prop
+  size?: "xs" | "sm" | "md" | "lg";
+  autoMarkEnabled?: boolean; // ✅ New prop
 }
 
 export function BingoCard({
@@ -29,24 +30,61 @@ export function BingoCard({
   highlightWin,
   winningCells,
   size = "md",
+  autoMarkEnabled = true, // ✅ Default to true
 }: BingoCardProps) {
+  // ✅ Check if a number is marked
   const isMarked = (num: number | null) => {
-    if (num === null) return true;
+    if (num === null) return true; // Free space is always marked
+
+    // ✅ If auto mark is disabled, only show manually marked numbers
+    if (!autoMarkEnabled) {
+      return card.marked_numbers?.includes(num) || false;
+    }
+
+    // ✅ Auto mark enabled: show both called and manually marked
     return calledNumbers.includes(num) || card.marked_numbers?.includes(num);
+  };
+
+  // ✅ Check if a number was manually marked by the user
+  const isManuallyMarked = (num: number | null) => {
+    if (num === null) return false;
+    return card.marked_numbers?.includes(num) || false;
   };
 
   const getCellStyle = (row: number, col: number, num: number | null) => {
     const key = `${row}-${col}`;
     const marked = isMarked(num);
+    const manuallyMarked = isManuallyMarked(num);
     const isWinning = winningCells?.has(key);
 
+    // ✅ Winning cells - highest priority
     if (isWinning && highlightWin) {
       return "bg-bingo-yellow text-black border-2 border-yellow-300 shadow-[0_0_15px_rgba(245,197,66,0.8)]";
     }
+
+    // ✅ Marked cells - different style based on manual vs auto
     if (marked) {
-      return "bg-green-500/70 text-white";
+      if (manuallyMarked) {
+        return "bg-blue-500/70 text-white border border-blue-400/30"; // Manual mark
+      }
+      return "bg-green-500/70 text-white"; // Auto mark
     }
+
     return "bg-[#1a1d2e] text-gray-300";
+  };
+
+  // ✅ Get mark indicator (dot/circle) for manual marks
+  const getMarkIndicator = (num: number | null) => {
+    if (num === null) return null;
+    if (!autoMarkEnabled && card.marked_numbers?.includes(num)) {
+      return (
+        <CircleCheck
+          size={8}
+          className="text-blue-400 absolute -top-0.5 -right-0.5"
+        />
+      );
+    }
+    return null;
   };
 
   const grid: (number | null)[][] = [];
@@ -107,6 +145,9 @@ export function BingoCard({
       <div className="flex items-center justify-between mb-1.5 sm:mb-2">
         <span className={`text-gray-500 font-medium ${config.cardNumber}`}>
           #{card.card_number}
+          {!autoMarkEnabled && (
+            <span className="ml-1.5 text-[8px] text-yellow-400/60">🔒</span>
+          )}
         </span>
         {onRemove && (
           <button
@@ -133,23 +174,45 @@ export function BingoCard({
       {/* Grid */}
       <div className={`grid grid-cols-5 ${config.gap}`}>
         {grid.map((row, rowIdx) =>
-          row.map((num, colIdx) => (
-            <motion.div
-              key={`${rowIdx}-${colIdx}`}
-              initial={isMarked(num) ? { scale: 0 } : false}
-              animate={isMarked(num) ? { scale: 1 } : {}}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              className={`
-                aspect-square flex items-center justify-center rounded-md font-bold
-                transition-all duration-300 ${getCellStyle(rowIdx, colIdx, num)}
-                ${config.cell}
-              `}
-            >
-              {num === null ? "★" : num}
-            </motion.div>
-          )),
+          row.map((num, colIdx) => {
+            const marked = isMarked(num);
+            const manuallyMarked = isManuallyMarked(num);
+
+            return (
+              <motion.div
+                key={`${rowIdx}-${colIdx}`}
+                initial={marked ? { scale: 0 } : false}
+                animate={marked ? { scale: 1 } : {}}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className={`
+                  relative aspect-square flex items-center justify-center rounded-md font-bold
+                  transition-all duration-300 ${getCellStyle(rowIdx, colIdx, num)}
+                  ${config.cell}
+                `}
+              >
+                {num === null ? "★" : num}
+                {/* ✅ Show manual mark indicator */}
+                {manuallyMarked && (
+                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_6px_rgba(96,165,250,0.5)]" />
+                )}
+                {/* ✅ Show "manual" label on hover (optional) */}
+                {manuallyMarked && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[4px] text-blue-400/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                    M
+                  </div>
+                )}
+              </motion.div>
+            );
+          }),
         )}
       </div>
+
+      {/* ✅ Auto Mark Status Indicator */}
+      {!autoMarkEnabled && (
+        <div className="mt-1 text-center text-[6px] text-yellow-400/40">
+          Manual mark mode • Click numbers to mark manually
+        </div>
+      )}
     </motion.div>
   );
 }

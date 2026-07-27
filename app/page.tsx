@@ -11,13 +11,13 @@ import { BingoBoard } from "@/components/game/bingo-board";
 import { LastCalled } from "@/components/game/last-called";
 import { WinnerModal } from "@/components/game/winner-modal";
 import { AnimatePresence, motion } from "framer-motion";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, CheckSquare, Square } from "lucide-react";
 import { useBingoSound } from "@/hooks/use-bingo-sound";
 
 export default function Home() {
   const { user, ready } = useTelegram();
   const { send } = useWebSocket(user?.id);
-  const { playNumber, toggleMute, isMuted } = useBingoSound(); // ✅ Get toggleMute and isMuted
+  const { playNumber, toggleMute, isMuted } = useBingoSound();
 
   const {
     status,
@@ -33,6 +33,9 @@ export default function Home() {
     boardCount,
     called,
   } = useGameStore();
+
+  // ✅ Auto Mark state
+  const [autoMarkEnabled, setAutoMarkEnabled] = useState(true);
 
   const lastCalledRef = useRef<string | null>(null);
 
@@ -50,6 +53,12 @@ export default function Home() {
     send({ type: "bingo.claim", card_id: myCards[0].id });
   }, [myCards, send]);
 
+  // ✅ Toggle Auto Mark
+  const toggleAutoMark = useCallback(() => {
+    setAutoMarkEnabled((prev) => !prev);
+    send({ type: "auto_mark_toggle", enabled: !autoMarkEnabled });
+  }, [autoMarkEnabled, send]);
+
   const calledNumbers = useGameStore((s) =>
     (s.called ?? []).map((c) => parseInt(c.slice(1))),
   );
@@ -58,7 +67,6 @@ export default function Home() {
 
     const latest = called[called.length - 1];
 
-    // avoid replay on reload / initial websocket state
     if (lastCalledRef.current === latest) return;
 
     lastCalledRef.current = latest;
@@ -69,13 +77,11 @@ export default function Home() {
   const isGameActive = status === "calling";
   const isLobby = status === "waiting" || status === "idle";
 
-  // ✅ Handle sound toggle - sync with both store and sound hook
   const handleSoundToggle = useCallback(() => {
-    toggleSound(); // Toggle store state
-    toggleMute(); // Toggle sound hook
+    toggleSound();
+    toggleMute();
   }, [toggleSound, toggleMute]);
 
-  // ✅ Determine if sound is on (consider both sources)
   const isSoundOn = soundEnabled && !isMuted;
 
   if (!ready) {
@@ -88,7 +94,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
-      {/* ✅ Top bar - ONLY in LOBBY */}
+      {/* Top bar - ONLY in LOBBY */}
       {isLobby && (
         <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
           <div className="flex items-center gap-2.5">
@@ -105,7 +111,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-          {/* ✅ Sound button in top bar (lobby only) */}
           <button
             onClick={handleSoundToggle}
             className="text-gray-400 hover:text-white transition-colors p-2"
@@ -115,7 +120,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ✅ GameHeader - ONLY in LOBBY state */}
+      {/* GameHeader - ONLY in LOBBY state */}
       {isLobby && <GameHeader />}
 
       <AnimatePresence mode="wait">
@@ -129,20 +134,16 @@ export default function Home() {
             transition={{ duration: 0.3 }}
             className="h-[calc(100vh-180px)] flex flex-col"
           >
-            {/* Card selection - 60% for grid, 40% for my cards */}
             <div className="h-[55%] overflow-hidden">
               <CardGrid send={send} />
             </div>
 
-            {/* My cards - 45% */}
             <div className="h-[45%] overflow-y-auto px-3 pb-4">
               {myCards.length > 0 ? (
                 <>
                   <div className="text-center text-xs text-gray-400 font-medium mb-2">
                     Your cards ({myCards.length}/{2})
                   </div>
-
-                  {/* ✅ Smaller cards in a grid */}
                   <div className="grid grid-cols-2 gap-2">
                     {myCards.map((card) => (
                       <BingoCard key={card.id} card={card} size="xs" />
@@ -167,9 +168,8 @@ export default function Home() {
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.3 }}
           >
-            {/* ✅ Game Stats with Sound Button */}
+            {/* Game Stats with Sound Button */}
             <div className="flex items-center gap-2 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
-              {/* Stats Grid - 4 columns */}
               <div className="flex-1 grid grid-cols-4 gap-1">
                 <div className="text-center">
                   <div className="text-[10px] text-gray-500 font-medium">
@@ -205,7 +205,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* ✅ Sound Button - Integrated with stats */}
               <button
                 onClick={handleSoundToggle}
                 className="flex-shrink-0 text-gray-400 hover:text-white transition-colors p-1.5 bg-[#1a1d2e] rounded-lg border border-white/5"
@@ -224,10 +223,10 @@ export default function Home() {
 
               {/* RIGHT - Player Cards */}
               <div className="flex-1 flex flex-col gap-3">
-                {/* Last Called */}
+                {/* ✅ Last Called */}
                 <LastCalled />
 
-                {/* Cards */}
+                {/* ✅ Cards */}
                 {myCards.length > 0 && (
                   <div className="space-y-3">
                     {myCards.map((card) => (
@@ -236,21 +235,48 @@ export default function Home() {
                         card={card}
                         calledNumbers={calledNumbers}
                         size="sm"
+                        autoMarkEnabled={autoMarkEnabled}
                       />
                     ))}
 
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-[#1a1d2e] hover:bg-[#252a3d] text-gray-300 font-bold py-2 rounded-lg text-sm transition-colors border border-white/5">
-                        AUTO MARK
-                      </button>
-                      <button
-                        onClick={handleClaimBingo}
-                        className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 active:scale-[0.97] text-white font-black py-2 rounded-lg text-sm tracking-wider transition-all shadow-lg shadow-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={myCards.length === 0}
-                      >
-                        BINGO!
-                      </button>
+                    {/* ✅ Auto Mark Toggle - Under Last Called, Above Cards */}
+                    <div className="flex items-center justify-between gap-2 px-1 py-1.5 bg-[#1a1d2e] rounded-lg border border-white/5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleAutoMark}
+                          className={`
+                            flex items-center justify-center gap-2
+                            px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200
+                            ${
+                              autoMarkEnabled
+                                ? "bg-green-600 hover:bg-green-500 text-white"
+                                : "bg-[#252a3d] hover:bg-[#2d3348] text-gray-400"
+                            }
+                          `}
+                        >
+                          {autoMarkEnabled ? (
+                            <CheckSquare size={14} className="text-green-300" />
+                          ) : (
+                            <Square size={14} className="text-gray-400" />
+                          )}
+                          {autoMarkEnabled ? "AUTO MARK ON" : "AUTO MARK OFF"}
+                        </button>
+                        <span className="text-[10px] text-gray-500">
+                          {autoMarkEnabled
+                            ? "Numbers are auto-marked"
+                            : "Mark numbers manually"}
+                        </span>
+                      </div>
                     </div>
+
+                    {/* BINGO Button */}
+                    <button
+                      onClick={handleClaimBingo}
+                      className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 active:scale-[0.97] text-white font-black py-2.5 rounded-lg text-sm tracking-wider transition-all shadow-lg shadow-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={myCards.length === 0}
+                    >
+                      BINGO!
+                    </button>
                   </div>
                 )}
 
