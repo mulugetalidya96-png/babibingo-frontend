@@ -17,7 +17,7 @@ import { useBingoSound } from "@/hooks/use-bingo-sound";
 export default function Home() {
   const { user, ready } = useTelegram();
   const { send } = useWebSocket(user?.id);
-  const { playNumber } = useBingoSound();
+  const { playNumber, toggleMute, isMuted } = useBingoSound(); // ✅ Get toggleMute and isMuted
 
   const {
     status,
@@ -69,6 +69,15 @@ export default function Home() {
   const isGameActive = status === "calling";
   const isLobby = status === "waiting" || status === "idle";
 
+  // ✅ Handle sound toggle - sync with both store and sound hook
+  const handleSoundToggle = useCallback(() => {
+    toggleSound(); // Toggle store state
+    toggleMute(); // Toggle sound hook
+  }, [toggleSound, toggleMute]);
+
+  // ✅ Determine if sound is on (consider both sources)
+  const isSoundOn = soundEnabled && !isMuted;
+
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -79,31 +88,32 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
-      {/* Top bar - Show both in lobby and game */}
-      <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-lg">
-            <span className="text-white text-sm font-black">B</span>
-          </div>
-          <div>
-            <span className="font-bold text-lg leading-tight text-white">
-              BabiBingo
-            </span>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[10px] text-gray-400">
-                {isLobby ? "Lobby" : "Live"}
+      {/* ✅ Top bar - ONLY in LOBBY */}
+      {isLobby && (
+        <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-white text-sm font-black">B</span>
+            </div>
+            <div>
+              <span className="font-bold text-lg leading-tight text-white">
+                BabiBingo
               </span>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-[10px] text-gray-400">Lobby</span>
+              </div>
             </div>
           </div>
+          {/* ✅ Sound button in top bar (lobby only) */}
+          <button
+            onClick={handleSoundToggle}
+            className="text-gray-400 hover:text-white transition-colors p-2"
+          >
+            {isSoundOn ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
         </div>
-        <button
-          onClick={toggleSound}
-          className="text-gray-400 hover:text-white transition-colors p-2"
-        >
-          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
-      </div>
+      )}
 
       {/* ✅ GameHeader - ONLY in LOBBY state */}
       {isLobby && <GameHeader />}
@@ -157,38 +167,52 @@ export default function Home() {
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.3 }}
           >
-            {/* ✅ Game Stats - Shown during game */}
-            <div className="grid grid-cols-4 gap-1 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
-              <div className="text-center">
-                <div className="text-[10px] text-gray-500 font-medium">
-                  WINNER
+            {/* ✅ Game Stats with Sound Button */}
+            <div className="flex items-center gap-2 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
+              {/* Stats Grid - 4 columns */}
+              <div className="flex-1 grid grid-cols-4 gap-1">
+                <div className="text-center">
+                  <div className="text-[10px] text-gray-500 font-medium">
+                    WINNER
+                  </div>
+                  <div className="text-sm font-bold text-green-400">
+                    {pool > 0 ? `${pool.toFixed(0)} ETB` : "—"}
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-green-400">
-                  {pool > 0 ? `${pool.toFixed(0)} ETB` : "—"}
+                <div className="text-center">
+                  <div className="text-[10px] text-gray-500 font-medium">
+                    PLAYERS
+                  </div>
+                  <div className="text-sm font-bold text-white">
+                    {players || 0}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] text-gray-500 font-medium">
+                    STAKE
+                  </div>
+                  <div className="text-sm font-bold text-white">
+                    {stake} ETB
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] text-gray-500 font-medium">
+                    CALL
+                  </div>
+                  <div className="text-sm font-bold text-yellow-400">
+                    {called ? `${called.length}/75` : "0/75"}
+                  </div>
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-[10px] text-gray-500 font-medium">
-                  PLAYERS
-                </div>
-                <div className="text-sm font-bold text-white">
-                  {players || 0}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-gray-500 font-medium">
-                  STAKE
-                </div>
-                <div className="text-sm font-bold text-white">{stake} ETB</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-gray-500 font-medium">
-                  CALL
-                </div>
-                <div className="text-sm font-bold text-yellow-400">
-                  {called ? `${called.length}/75` : "0/75"}
-                </div>
-              </div>
+
+              {/* ✅ Sound Button - Integrated with stats */}
+              <button
+                onClick={handleSoundToggle}
+                className="flex-shrink-0 text-gray-400 hover:text-white transition-colors p-1.5 bg-[#1a1d2e] rounded-lg border border-white/5"
+                title={isSoundOn ? "Mute" : "Unmute"}
+              >
+                {isSoundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
             </div>
 
             {/* Game area */}
