@@ -17,22 +17,23 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
 
   const [isReserving, setIsReserving] = useState(false);
   const [pendingCard, setPendingCard] = useState<number | null>(null);
-  const [reservationError, setReservationError] = useState<string | null>(null);
 
   const myCardNumbers = new Set(myCards.map((c) => c.card_number));
   const reservedSet = new Set(reservedCards);
 
   const isSelectable = status === "waiting";
 
-  // ✅ Handle reservation error - exposed via ref or callback
+  // ✅ Handle reservation error
   const handleReservationError = useCallback(
     (error: string) => {
       console.log("❌ Reservation error:", error);
       setIsReserving(false);
       if (pendingCard !== null) {
+        // ✅ Remove the card from selectedCards
         deselectCard(pendingCard);
         setPendingCard(null);
       }
+      // ✅ Show toast
       toast.error(error);
     },
     [pendingCard, deselectCard],
@@ -40,21 +41,19 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
 
   // ✅ Handle reservation success
   const handleReservationSuccess = useCallback(() => {
-    console.log("✅ Reservation success:", pendingCard);
+    console.log("✅ Reservation success");
     setIsReserving(false);
     setPendingCard(null);
-  }, [pendingCard]);
+  }, []);
 
   // ✅ Expose handlers to window for WebSocket to call
   useEffect(() => {
-    // @ts-ignore
-    window.__cardGridHandlers = {
+    (window as any).__cardGridHandlers = {
       onReservationError: handleReservationError,
       onReservationSuccess: handleReservationSuccess,
     };
     return () => {
-      // @ts-ignore
-      delete window.__cardGridHandlers;
+      delete (window as any).__cardGridHandlers;
     };
   }, [handleReservationError, handleReservationSuccess]);
 
@@ -82,12 +81,11 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       return;
     }
 
-    // ✅ Local selection first for optimistic UI
+    // Local selection first for optimistic UI
     console.log(`📝 Selecting card ${num}`);
     selectCard(num);
     setPendingCard(num);
     setIsReserving(true);
-    setReservationError(null);
 
     // Send reservation to backend
     send({
@@ -95,13 +93,12 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       card_number: num,
     });
 
-    // ✅ Set a timeout to clear reserving state if no response
+    // ✅ Set a timeout to clear reserving state if no response (10 seconds)
     setTimeout(() => {
       if (isReserving && pendingCard === num) {
         console.log("⏰ Reservation timeout for card", num);
         setIsReserving(false);
         setPendingCard(null);
-        // Don't deselect on timeout - let the user retry
       }
     }, 10000);
   };
@@ -143,11 +140,6 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
         {isReserving && (
           <span className="ml-2 text-xs text-blue-400 animate-pulse">
             ⏳ Reserving...
-          </span>
-        )}
-        {reservationError && (
-          <span className="ml-2 text-xs text-red-400">
-            ❌ {reservationError}
           </span>
         )}
       </div>
