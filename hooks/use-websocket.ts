@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore } from "./use-game-store";
 import type { WSResponse } from "@/types/game";
 
@@ -9,6 +9,7 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws";
 export function useWebSocket(userId: number | undefined) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const {
     setGameState,
     addMyCard,
@@ -33,6 +34,7 @@ export function useWebSocket(userId: number | undefined) {
 
     ws.onopen = () => {
       console.log("[WS] Connected");
+      setIsConnected(true);
       ws.send(JSON.stringify({ type: "game.state" }));
     };
 
@@ -154,12 +156,32 @@ export function useWebSocket(userId: number | undefined) {
             }
             break;
 
+          // ✅ SINGLE WINNER
           case "game.winner":
             if (data.winner) {
+              console.log(
+                `🎉 Winner: ${data.winner.name} - $${data.winner.prize}`,
+              );
               setWinner(data.winner);
               setGameState({
                 status: "finished",
                 nextGameTimer: 10,
+              });
+            }
+            break;
+
+          // ✅ MULTIPLE WINNERS
+          case "game.winners_summary":
+            if (data.winners && data.winners.length > 0) {
+              console.log(`🎉 ${data.winners.length} winners!`);
+              // Set the first winner as the primary winner
+              setWinner(data.winners[0]);
+              // Store all winners
+              setWinners(data.winners);
+              setGameState({
+                status: "finished",
+                nextGameTimer: 10,
+                pool: data.pool ?? 0,
               });
             }
             break;
@@ -182,6 +204,7 @@ export function useWebSocket(userId: number | undefined) {
 
     ws.onclose = () => {
       console.log("[WS] Disconnected, reconnecting...");
+      setIsConnected(false);
       reconnectTimeout.current = setTimeout(connect, 3000);
     };
 
@@ -198,6 +221,7 @@ export function useWebSocket(userId: number | undefined) {
     removeMyCard, // ✅ Added
     markCalled,
     setWinner,
+    setWinners,
     setMyCards,
     setReservedCardsList,
     addReservedCard,
@@ -226,5 +250,5 @@ export function useWebSocket(userId: number | undefined) {
     return () => disconnect();
   }, [connect, disconnect]);
 
-  return { send, ws: wsRef };
+  return { send, ws: wsRef, isConnected };
 }

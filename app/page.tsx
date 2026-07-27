@@ -11,12 +11,19 @@ import { BingoBoard } from "@/components/game/bingo-board";
 import { LastCalled } from "@/components/game/last-called";
 import { WinnerModal } from "@/components/game/winner-modal";
 import { AnimatePresence, motion } from "framer-motion";
-import { Volume2, VolumeX, CheckSquare, Square } from "lucide-react";
+import {
+  Volume2,
+  VolumeX,
+  CheckSquare,
+  Square,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import { useBingoSound } from "@/hooks/use-bingo-sound";
 
 export default function Home() {
   const { user, ready } = useTelegram();
-  const { send } = useWebSocket(user?.id);
+  const { send, isConnected } = useWebSocket(user?.id); // ✅ Get isConnected from WebSocket hook
   const { playNumber, toggleMute, isMuted } = useBingoSound();
 
   const {
@@ -84,16 +91,55 @@ export default function Home() {
 
   const isSoundOn = soundEnabled && !isMuted;
 
-  if (!ready) {
+  // ✅ Loading state: Wait for Telegram ready AND WebSocket connected
+  const isLoading = !ready || !isConnected;
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        <div className="animate-pulse">Loading BabiBingo...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0f] text-gray-500">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+          className="w-12 h-12 border-2 border-gray-700 border-t-yellow-400 rounded-full mb-4"
+        />
+        <p className="text-lg font-medium text-gray-400">
+          Connecting to BabiBingo...
+        </p>
+        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+          {!ready ? (
+            <>
+              <span className="animate-pulse">⏳</span> Loading Telegram...
+            </>
+          ) : !isConnected ? (
+            <>
+              <WifiOff size={14} className="text-red-400 animate-pulse" />
+              Connecting to game server...
+            </>
+          ) : null}
+        </div>
       </div>
     );
   }
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
+      {/* ✅ Connection Status Indicator */}
+      <div className="flex items-center justify-end px-4 py-1">
+        <div className="flex items-center gap-1 text-[10px] text-gray-500">
+          {isConnected ? (
+            <>
+              <Wifi size={10} className="text-green-400" />
+              <span className="text-green-400/70">Connected</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={10} className="text-red-400 animate-pulse" />
+              <span className="text-red-400/70">Disconnected</span>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Top bar - ONLY in LOBBY */}
       {isLobby && (
         <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
