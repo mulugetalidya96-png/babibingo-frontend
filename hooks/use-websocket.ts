@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore } from "./use-game-store";
 import type { WSResponse } from "@/types/game";
+import { toast } from "sonner";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws";
 
@@ -13,17 +14,19 @@ export function useWebSocket(userId: number | undefined) {
   const {
     setGameState,
     addMyCard,
-    removeMyCard, // ✅ Added
+    removeMyCard,
     markCalled,
     setWinner,
-    setWinners, // ✅ NEW
+    setWinners,
     setMyCards,
     setReservedCardsList,
     addReservedCard,
     removeReservedCard,
     reserveCard,
-    unReserveCard, // ✅ Added
+    unReserveCard,
     resetForNewGame,
+    deselectCard, // ✅ Added for rollback
+    selectedCards, // ✅ Get current selected cards
   } = useGameStore();
 
   const connect = useCallback(() => {
@@ -96,7 +99,6 @@ export function useWebSocket(userId: number | undefined) {
             break;
 
           case "card.reserved":
-            // Only process if the card belongs to the current user
             if (data.user_id === userId) {
               console.log(`[WS] Card ${data.card_number} reserved by you`);
               if (data.card_number !== undefined) {
@@ -106,7 +108,6 @@ export function useWebSocket(userId: number | undefined) {
                 addMyCard(data.card);
               }
             } else {
-              // Update the reserved cards list for display (other users)
               console.log(
                 `[WS] Card ${data.card_number} reserved by user ${data.user_id}`,
               );
@@ -117,16 +118,13 @@ export function useWebSocket(userId: number | undefined) {
             break;
 
           case "card.cancelled":
-            // ✅ Only process if the card belongs to the current user
             if (data.user_id === userId) {
               console.log(`[WS] Card ${data.card_number} cancelled by you`);
-              // ✅ Remove from my cards and reserved cards
               if (data.card_number !== undefined) {
-                removeMyCard(data.card_number); // ✅ Remove from myCards
-                unReserveCard(data.card_number); // ✅ Remove from reservedCards
+                removeMyCard(data.card_number);
+                unReserveCard(data.card_number);
               }
             } else {
-              // Update reserved cards list for others
               if (data.card_number !== undefined) {
                 removeReservedCard(data.card_number);
               }
@@ -156,7 +154,6 @@ export function useWebSocket(userId: number | undefined) {
             }
             break;
 
-          // ✅ SINGLE WINNER
           case "game.winner":
             if (data.winner) {
               console.log(
@@ -170,13 +167,10 @@ export function useWebSocket(userId: number | undefined) {
             }
             break;
 
-          // ✅ MULTIPLE WINNERS
           case "game.winners_summary":
             if (data.winners && data.winners.length > 0) {
               console.log(`🎉 ${data.winners.length} winners!`);
-              // Set the first winner as the primary winner
               setWinner(data.winners[0]);
-              // Store all winners
               setWinners(data.winners);
               setGameState({
                 status: "finished",
@@ -193,9 +187,69 @@ export function useWebSocket(userId: number | undefined) {
             });
             break;
 
+          // ✅ ERROR HANDLING WITH ROLLBACK
           case "error":
             console.error("[WS] Error:", data.message);
+
+            // ✅ Check for reservation errors and rollback
+            if (data.message) {
+              const msg = data.message.toLowerCase();
+
+              // ✅ Handle insufficient balance - rollback card selection
+              if (msg.includes("insufficient balance")) {
+                // Get the current state and deselect the last card
+                const state = useGameStore.getState();
+                const lastSelected =
+                  state.selectedCards[state.selectedCards.length - 1];
+                if (lastSelected !== undefined) {
+                  deselectCard(lastSelected);
+                  toast.error("Insufficient balance to reserve this card");
+                } else {
+                  toast.error("Insufficient balance");
+                }
+              }
+              // ✅ Handle card already reserved
+              else if (msg.includes("card already reserved")) {
+                const state = useGameStore.getState();
+                const lastSelected =
+                  state.selectedCards[state.selectedCards.length - 1];
+                if (lastSelected !== undefined) {
+                  deselectCard(lastSelected);
+                  toast.warning("This card is already reserved");
+                } else {
+                  toast.warning("Card already reserved");
+                }
+              }
+              // ✅ Handle maximum cards
+              else if (msg.includes("maximum")) {
+                const state = useGameStore.getState();
+                const lastSelected =
+                  state.selectedCards[state.selectedCards.length - 1];
+                if (lastSelected !== undefined) {
+                  deselectCard(lastSelected);
+                  toast.warning(data.message);
+                } else {
+                  toast.warning(data.message);
+                }
+              }
+              // ✅ Handle other errors
+              else {
+                // Rollback any pending selection
+                const state = useGameStore.getState();
+                if (state.selectedCards.length > 0) {
+                  const lastSelected =
+                    state.selectedCards[state.selectedCards.length - 1];
+                  if (lastSelected !== undefined) {
+                    deselectCard(lastSelected);
+                  }
+                }
+                toast.error(data.message || "An error occurred");
+              }
+            }
             break;
+
+          default:
+            console.log("[WS] Unknown message type:", data.type);
         }
       } catch (err) {
         console.error("[WS] Parse error:", err);
@@ -218,7 +272,7 @@ export function useWebSocket(userId: number | undefined) {
     userId,
     setGameState,
     addMyCard,
-    removeMyCard, // ✅ Added
+    removeMyCard,
     markCalled,
     setWinner,
     setWinners,
@@ -227,8 +281,9 @@ export function useWebSocket(userId: number | undefined) {
     addReservedCard,
     removeReservedCard,
     reserveCard,
-    unReserveCard, // ✅ Added
+    unReserveCard,
     resetForNewGame,
+    deselectCard, // ✅ Added
   ]);
 
   const disconnect = useCallback(() => {
