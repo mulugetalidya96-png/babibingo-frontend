@@ -18,14 +18,16 @@ export function GameHeader() {
 
     const fetchBalance = async () => {
       try {
+        // ✅ Use full URL or ensure the API route exists
         const response = await fetch(
-          `/api/user/balance?telegram_id=${user.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL || ""}/user/balance?telegram_id=${user.id}`,
         );
+
         if (response.ok) {
           const data = await response.json();
-          setBalance(data.balance);
+          setBalance(data.balance || 0);
         } else {
-          console.error("Failed to fetch balance");
+          console.error("Failed to fetch balance:", response.status);
         }
       } catch (error) {
         console.error("Error fetching balance:", error);
@@ -35,6 +37,10 @@ export function GameHeader() {
     };
 
     fetchBalance();
+
+    // ✅ Refresh balance every 30 seconds
+    const interval = setInterval(fetchBalance, 30000);
+    return () => clearInterval(interval);
   }, [user?.id]);
 
   const formatTime = (seconds: number) => {
