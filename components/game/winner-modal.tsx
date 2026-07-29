@@ -49,7 +49,7 @@ export function WinnerModal() {
     };
   };
 
-  // ✅ Calculate winning cells based on the pattern
+  // ✅ Calculate winning cells based on the pattern (supports all patterns)
   const getWinningCells = (card: any) => {
     const cells = new Set<string>();
     const grid = [
@@ -60,16 +60,18 @@ export function WinnerModal() {
       card.card_data.O,
     ];
 
+    // Helper to check if a cell is marked
+    const isMarked = (row: number, col: number) => {
+      const num = grid[col][row];
+      if (num === null) return true; // Free space
+      return calledNumbers.includes(num) || card.marked_numbers?.includes(num);
+    };
+
     // Check horizontal wins
     for (let row = 0; row < 5; row++) {
       let win = true;
       for (let col = 0; col < 5; col++) {
-        const num = grid[col][row];
-        if (
-          num !== null &&
-          !calledNumbers.includes(num) &&
-          !card.marked_numbers?.includes(num)
-        ) {
+        if (!isMarked(row, col)) {
           win = false;
           break;
         }
@@ -86,12 +88,7 @@ export function WinnerModal() {
     for (let col = 0; col < 5; col++) {
       let win = true;
       for (let row = 0; row < 5; row++) {
-        const num = grid[col][row];
-        if (
-          num !== null &&
-          !calledNumbers.includes(num) &&
-          !card.marked_numbers?.includes(num)
-        ) {
+        if (!isMarked(row, col)) {
           win = false;
           break;
         }
@@ -107,12 +104,7 @@ export function WinnerModal() {
     // Check diagonal (top-left to bottom-right)
     let win = true;
     for (let i = 0; i < 5; i++) {
-      const num = grid[i][i];
-      if (
-        num !== null &&
-        !calledNumbers.includes(num) &&
-        !card.marked_numbers?.includes(num)
-      ) {
+      if (!isMarked(i, i)) {
         win = false;
         break;
       }
@@ -127,12 +119,7 @@ export function WinnerModal() {
     // Check diagonal (top-right to bottom-left)
     win = true;
     for (let i = 0; i < 5; i++) {
-      const num = grid[4 - i][i];
-      if (
-        num !== null &&
-        !calledNumbers.includes(num) &&
-        !card.marked_numbers?.includes(num)
-      ) {
+      if (!isMarked(i, 4 - i)) {
         win = false;
         break;
       }
@@ -144,7 +131,62 @@ export function WinnerModal() {
       return cells;
     }
 
+    // ✅ Check Four Corners
+    const corners = [
+      [0, 0],
+      [0, 4],
+      [4, 0],
+      [4, 4],
+    ];
+    let allCornersMarked = true;
+    for (const pos of corners) {
+      if (!isMarked(pos[0], pos[1])) {
+        allCornersMarked = false;
+        break;
+      }
+    }
+    if (allCornersMarked) {
+      for (const pos of corners) {
+        cells.add(`${pos[0]}-${pos[1]}`);
+      }
+      return cells;
+    }
+
+    // ✅ Check Center Cross (Plus sign)
+    const centerCross = [
+      [2, 1],
+      [2, 2],
+      [2, 3],
+      [1, 2],
+      [3, 2],
+    ];
+    let allCrossMarked = true;
+    for (const pos of centerCross) {
+      if (!isMarked(pos[0], pos[1])) {
+        allCrossMarked = false;
+        break;
+      }
+    }
+    if (allCrossMarked) {
+      for (const pos of centerCross) {
+        cells.add(`${pos[0]}-${pos[1]}`);
+      }
+      return cells;
+    }
+
     return cells;
+  };
+
+  // ✅ Get pattern display name
+  const getPatternDisplay = (pattern: string) => {
+    const patterns: Record<string, string> = {
+      horizontal: "Horizontal",
+      vertical: "Vertical",
+      diagonal: "Diagonal",
+      four_corners: "Four Corners",
+      center_cross: "Center Cross",
+    };
+    return patterns[pattern] || pattern;
   };
 
   // ✅ Prepare winner cards data
@@ -152,6 +194,7 @@ export function WinnerModal() {
     ...w,
     card: getWinnerCard(w),
     winningCells: getWinningCells(getWinnerCard(w)),
+    displayPattern: getPatternDisplay(w.pattern || ""),
   }));
 
   return (
@@ -231,8 +274,17 @@ export function WinnerModal() {
                     </div>
                   </div>
 
+                  {/* ✅ Pattern Badge */}
+                  {w.displayPattern && (
+                    <div className="mb-2">
+                      <span className="inline-block text-[10px] font-bold text-yellow-400/80 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
+                        🎯 {w.displayPattern}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Winning Card */}
-                  <div className="mt-2">
+                  <div className="mt-1">
                     <BingoCard
                       card={w.card}
                       calledNumbers={calledNumbers}
@@ -240,11 +292,6 @@ export function WinnerModal() {
                       winningCells={w.winningCells}
                       size="xs"
                     />
-                    {w.pattern && (
-                      <div className="text-xs text-yellow-400/60 text-center mt-1">
-                        {w.pattern}
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               ))}

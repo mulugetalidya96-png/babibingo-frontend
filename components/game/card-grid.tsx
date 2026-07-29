@@ -109,14 +109,14 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       return "bg-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.6)] border border-green-400";
     }
 
-    // ✅ Owned cards (reserved and confirmed) - Orange
+    // ✅ Owned by me - Green (changed from orange)
     if (myCardNumbers.has(num)) {
-      return "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_0_8px_rgba(251,146,60,0.3)]";
+      return "bg-gradient-to-br from-green-600 to-green-700 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)] border border-green-500/30";
     }
 
-    // ✅ Reserved by other players - Purple/Indigo (instead of gray)
+    // ✅ Reserved by other players - Orange (changed from purple)
     if (reservedSet.has(num)) {
-      return "bg-indigo-600/40 text-indigo-300 cursor-not-allowed border border-indigo-500/30";
+      return "bg-orange-600/40 text-orange-300 cursor-not-allowed border border-orange-500/30";
     }
 
     // ✅ Available - Dark with hover effect
@@ -165,7 +165,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
           maxHeight: "calc(60vh - 40px)",
         }}
       >
-        {/* ✅ Responsive grid: 8 columns on mobile, 10 on larger screens */}
+        {/* Responsive grid: 8 columns on mobile, 10 on larger screens */}
         <div className="grid grid-cols-8 sm:grid-cols-10 gap-[2px] sm:gap-[3px]">
           {Array.from({ length: 400 }, (_, i) => i + 1).map((num) => (
             <motion.button
@@ -184,7 +184,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
                 items-center
                 justify-center
                 rounded-[2px] sm:rounded-[4px]
-                text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px]
+                text-[9px] sm:text-[10px] md:text-[11px] lg:text-[12px]
                 font-bold
                 transition-all
                 duration-150
