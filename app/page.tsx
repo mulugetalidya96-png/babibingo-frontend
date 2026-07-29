@@ -47,6 +47,9 @@ export default function Home() {
   // ✅ Countdown animation state
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState(3);
+  const [countdownPhase, setCountdownPhase] = useState<"countdown" | "go" | "">(
+    "",
+  );
 
   const lastCalledRef = useRef<string | null>(null);
 
@@ -61,28 +64,45 @@ export default function Home() {
 
   // ✅ Countdown animation effect when timer hits 1
   useEffect(() => {
-    if (status !== "waiting") return;
+    if (status !== "waiting") {
+      setShowCountdown(false);
+      setCountdownPhase("");
+      return;
+    }
 
-    // Show countdown animation when timer is 1 second
-    if (timer <= 1 && timer > 0) {
-      setShowCountdown(true);
-      setCountdownNumber(3);
+    // Start countdown when timer is 1 second or less
+    if (timer <= 1) {
+      if (!showCountdown) {
+        setShowCountdown(true);
+        setCountdownNumber(3);
+        setCountdownPhase("countdown");
+      }
 
-      // Countdown sequence: 3, 2, 1, GO!
+      // Countdown sequence: 3, 2, 1
       const countdownInterval = setInterval(() => {
         setCountdownNumber((prev) => {
-          if (prev <= 1) {
+          if (prev === 1) {
+            // After 1, show "GO!" then finish
+            setCountdownPhase("go");
             clearInterval(countdownInterval);
-            // Game will start
+            // Hide countdown after GO! animation
+            setTimeout(() => {
+              setShowCountdown(false);
+              setCountdownPhase("");
+            }, 800);
             return 0;
           }
           return prev - 1;
         });
-      }, 500);
+      }, 600);
 
       return () => clearInterval(countdownInterval);
     } else {
-      setShowCountdown(false);
+      // Reset when timer goes above 1
+      if (showCountdown) {
+        setShowCountdown(false);
+        setCountdownPhase("");
+      }
     }
   }, [timer, status]);
 
@@ -94,7 +114,6 @@ export default function Home() {
   // ✅ Toggle Auto Mark
   const toggleAutoMark = useCallback(() => {
     setAutoMarkEnabled((prev) => !prev);
-    send({ type: "auto_mark_toggle", enabled: !autoMarkEnabled });
   }, [autoMarkEnabled, send]);
 
   const calledNumbers = useGameStore((s) =>
@@ -171,28 +190,66 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Countdown Overlay */}
+      {/* ✅ Countdown Overlay with better animation */}
       <AnimatePresence>
-        {showCountdown && countdownNumber > 0 && (
+        {showCountdown && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
           >
-            <motion.div
-              key={countdownNumber}
-              initial={{ scale: 2, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-8xl font-black text-yellow-400"
-            >
-              {countdownNumber === 3 && "3️⃣"}
-              {countdownNumber === 2 && "2️⃣"}
-              {countdownNumber === 1 && "1️⃣"}
-              {countdownNumber === 0 && "🚀"}
-            </motion.div>
+            <div className="flex flex-col items-center">
+              {countdownPhase === "countdown" && countdownNumber > 0 && (
+                <motion.div
+                  key={countdownNumber}
+                  initial={{ scale: 2, opacity: 0, rotate: -20 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 0.5, opacity: 0, rotate: 20 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 15,
+                    duration: 0.4,
+                  }}
+                  className="text-8xl sm:text-9xl font-black text-yellow-400"
+                >
+                  {countdownNumber === 3 && "3️⃣"}
+                  {countdownNumber === 2 && "2️⃣"}
+                  {countdownNumber === 1 && "1️⃣"}
+                </motion.div>
+              )}
+
+              {countdownPhase === "go" && (
+                <motion.div
+                  initial={{ scale: 3, opacity: 0, rotate: -30 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 10,
+                    duration: 0.5,
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="text-7xl sm:text-8xl font-black text-green-400 mb-2">
+                    🚀
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-black text-green-400">
+                    GO!
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ✅ Progress bar showing countdown */}
+              <motion.div
+                initial={{ width: "100%" }}
+                animate={{ width: "0%" }}
+                transition={{ duration: 1.8, ease: "linear" }}
+                className="mt-8 h-1 bg-gradient-to-r from-yellow-400 to-green-400 rounded-full max-w-[200px] w-full"
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
