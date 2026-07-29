@@ -108,15 +108,6 @@ export function LastCalled() {
           </motion.div>
         ))}
       </div>
-
-      {/* ✅ Total called count */}
-      {called.length > 0 && (
-        <div className="mt-1.5 sm:mt-2 text-center">
-          <span className="text-[8px] sm:text-[9px] text-gray-500">
-            {called.length} / 75 called
-          </span>
-        </div>
-      )}
     </div>
   );
 }
