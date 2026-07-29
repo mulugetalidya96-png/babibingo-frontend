@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export function GameHeader() {
-  const { stake, boardCount, timer, pool, players, balance } = useGameStore();
+  const { stake, boardCount, timer, pool, balance, players } = useGameStore();
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

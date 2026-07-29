@@ -314,20 +314,42 @@ export default function Home() {
       {/* Top bar - ONLY in LOBBY */}
       {isLobby && (
         <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-sm z-10 border-b border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white text-sm font-black">B</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <span className="text-white text-lg font-black">🎯</span>
             </div>
+
             <div>
-              <span className="font-bold text-lg leading-tight text-white">
+              <motion.span
+                animate={{
+                  backgroundPosition: ["0%", "100%", "0%"],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                className="
+            font-bold text-xl sm:text-2xl leading-tight
+            bg-gradient-to-r from-orange-400 via-yellow-300 via-pink-400 to-orange-400
+            bg-clip-text text-transparent
+            bg-[length:200%]
+            tracking-wide
+            drop-shadow-[0_0_30px_rgba(251,146,60,0.1)]
+          "
+                style={{ backgroundSize: "200%" }}
+              >
                 BabiBingo
-              </span>
-              <div className="flex items-center gap-1">
+              </motion.span>
+              <div className="flex items-center gap-1 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[10px] text-gray-400">Lobby</span>
+                <span className="text-[10px] text-gray-400 font-medium">
+                  Lobby
+                </span>
               </div>
             </div>
           </div>
+
           <button
             onClick={handleSoundToggle}
             className="text-gray-400 hover:text-white transition-colors p-2"
