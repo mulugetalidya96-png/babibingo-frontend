@@ -42,9 +42,7 @@ export default function Home() {
     called,
   } = useGameStore();
 
-  // ✅ Auto Mark state
   const [autoMarkEnabled, setAutoMarkEnabled] = useState(true);
-  // ✅ Countdown animation state
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [countdownPhase, setCountdownPhase] = useState<"countdown" | "go" | "">(
@@ -53,7 +51,6 @@ export default function Home() {
 
   const lastCalledRef = useRef<string | null>(null);
 
-  // Countdown timer for next game
   useEffect(() => {
     if (status !== "finished" || nextGameTimer <= 0) return;
     const interval = setInterval(() => {
@@ -62,34 +59,32 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [status, nextGameTimer, setNextGameTimer]);
 
-  // ✅ Countdown animation effect when timer hits 1
+  // ✅ Countdown animation - stays until game starts
   useEffect(() => {
+    if (status === "calling") {
+      setShowCountdown(false);
+      setCountdownPhase("");
+      return;
+    }
+
     if (status !== "waiting") {
       setShowCountdown(false);
       setCountdownPhase("");
       return;
     }
 
-    // Start countdown when timer is 1 second or less
-    if (timer <= 1) {
+    if (timer <= 1 && timer >= 0) {
       if (!showCountdown) {
         setShowCountdown(true);
         setCountdownNumber(3);
         setCountdownPhase("countdown");
       }
 
-      // Countdown sequence: 3, 2, 1
       const countdownInterval = setInterval(() => {
         setCountdownNumber((prev) => {
           if (prev === 1) {
-            // After 1, show "GO!" then finish
             setCountdownPhase("go");
             clearInterval(countdownInterval);
-            // Hide countdown after GO! animation
-            setTimeout(() => {
-              setShowCountdown(false);
-              setCountdownPhase("");
-            }, 800);
             return 0;
           }
           return prev - 1;
@@ -98,8 +93,7 @@ export default function Home() {
 
       return () => clearInterval(countdownInterval);
     } else {
-      // Reset when timer goes above 1
-      if (showCountdown) {
+      if (showCountdown && timer > 1) {
         setShowCountdown(false);
         setCountdownPhase("");
       }
@@ -111,10 +105,9 @@ export default function Home() {
     send({ type: "bingo.claim", card_id: myCards[0].id });
   }, [myCards, send]);
 
-  // ✅ Toggle Auto Mark
   const toggleAutoMark = useCallback(() => {
     setAutoMarkEnabled((prev) => !prev);
-  }, [autoMarkEnabled, send]);
+  }, []);
 
   const calledNumbers = useGameStore((s) =>
     (s.called ?? []).map((c) => parseInt(c.slice(1))),
@@ -141,7 +134,6 @@ export default function Home() {
 
   const isSoundOn = soundEnabled && !isMuted;
 
-  // ✅ Loading state: Wait for Telegram ready AND WebSocket connected
   const isLoading = !ready || !isConnected;
 
   if (isLoading) {
@@ -173,7 +165,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
-      {/* Connection Status Indicator */}
       <div className="flex items-center justify-end px-4 py-1">
         <div className="flex items-center gap-1 text-[10px] text-gray-500">
           {isConnected ? (
@@ -190,65 +181,131 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Countdown Overlay with better animation */}
+      {/* ✅ Beautiful Countdown Overlay */}
       <AnimatePresence>
         {showCountdown && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-black/95 to-[#0a0a0f] backdrop-blur-md"
           >
             <div className="flex flex-col items-center">
               {countdownPhase === "countdown" && countdownNumber > 0 && (
                 <motion.div
                   key={countdownNumber}
-                  initial={{ scale: 2, opacity: 0, rotate: -20 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  exit={{ scale: 0.5, opacity: 0, rotate: 20 }}
+                  initial={{ scale: 3, opacity: 0, y: 50 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.5, opacity: 0, y: -50 }}
                   transition={{
                     type: "spring",
                     stiffness: 300,
-                    damping: 15,
-                    duration: 0.4,
+                    damping: 20,
+                    duration: 0.5,
                   }}
-                  className="text-8xl sm:text-9xl font-black text-yellow-400"
+                  className="relative"
                 >
-                  {countdownNumber === 3 && "3️⃣"}
-                  {countdownNumber === 2 && "2️⃣"}
-                  {countdownNumber === 1 && "1️⃣"}
+                  {/* ✅ Glowing circle behind number */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 2, opacity: 0.3 }}
+                      transition={{ duration: 0.5 }}
+                      className="w-48 h-48 rounded-full bg-yellow-400/20 blur-3xl"
+                    />
+                  </div>
+
+                  {/* ✅ Large number with gradient */}
+                  <div className="relative text-[200px] sm:text-[280px] font-black leading-none tracking-tighter">
+                    <span className="bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                      {countdownNumber}
+                    </span>
+                  </div>
+
+                  {/* ✅ Subtle number shadow */}
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-xl" />
                 </motion.div>
               )}
 
               {countdownPhase === "go" && (
                 <motion.div
-                  initial={{ scale: 3, opacity: 0, rotate: -30 }}
+                  initial={{ scale: 2, opacity: 0, rotate: -10 }}
                   animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0.5, opacity: 0 }}
                   transition={{
                     type: "spring",
                     stiffness: 200,
-                    damping: 10,
-                    duration: 0.5,
+                    damping: 15,
+                    duration: 0.6,
                   }}
                   className="flex flex-col items-center"
                 >
-                  <div className="text-7xl sm:text-8xl font-black text-green-400 mb-2">
-                    🚀
+                  {/* ✅ Glowing ring */}
+                  <div className="relative">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      <div className="w-64 h-64 rounded-full border-4 border-green-400/20 blur-2xl" />
+                    </motion.div>
+
+                    <div className="text-[150px] sm:text-[200px] font-black leading-none tracking-tighter">
+                      <span className="bg-gradient-to-r from-green-300 via-green-400 to-emerald-400 bg-clip-text text-transparent">
+                        GO!
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-4xl sm:text-5xl font-black text-green-400">
-                    GO!
-                  </div>
+
+                  {/* ✅ Pulsing "Waiting" text */}
+                  <motion.div
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="mt-6 text-sm text-gray-400 font-medium tracking-widest uppercase"
+                  >
+                    ⏳ Game Starting...
+                  </motion.div>
                 </motion.div>
               )}
 
-              {/* ✅ Progress bar showing countdown */}
-              <motion.div
-                initial={{ width: "100%" }}
-                animate={{ width: "0%" }}
-                transition={{ duration: 1.8, ease: "linear" }}
-                className="mt-8 h-1 bg-gradient-to-r from-yellow-400 to-green-400 rounded-full max-w-[200px] w-full"
-              />
+              {/* ✅ Animated progress bar */}
+              {countdownPhase === "countdown" && (
+                <motion.div
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 1.8, ease: "linear" }}
+                  className="mt-12 h-1.5 bg-gradient-to-r from-yellow-400 via-orange-400 to-green-400 rounded-full max-w-[300px] w-full shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                />
+              )}
+
+              {/* ✅ Particle effects (small dots) */}
+              {countdownPhase === "countdown" && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {[...Array(20)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{
+                        x: Math.random() * window.innerWidth,
+                        y: Math.random() * window.innerHeight,
+                        scale: 0,
+                        opacity: 0,
+                      }}
+                      animate={{
+                        x: Math.random() * window.innerWidth,
+                        y: Math.random() * window.innerHeight,
+                        scale: [0, 1, 0],
+                        opacity: [0, 0.5, 0],
+                      }}
+                      transition={{
+                        duration: 2 + Math.random() * 2,
+                        repeat: Infinity,
+                        delay: Math.random() * 2,
+                      }}
+                      className="absolute w-1 h-1 rounded-full bg-yellow-400/30"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -280,11 +337,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* GameHeader - ONLY in LOBBY state */}
       {isLobby && <GameHeader />}
 
       <AnimatePresence mode="wait">
-        {/* ===== LOBBY / CARD SELECTION ===== */}
         {isLobby && (
           <motion.div
             key="lobby"
@@ -319,7 +374,6 @@ export default function Home() {
           </motion.div>
         )}
 
-        {/* ===== LIVE GAME ===== */}
         {isGameActive && (
           <motion.div
             key="game"
@@ -328,7 +382,6 @@ export default function Home() {
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Game Stats with Sound Button */}
             <div className="flex items-center gap-2 px-2 py-2 bg-[#151725]/50 mx-2 mt-2 rounded-xl">
               <div className="flex-1 grid grid-cols-4 gap-1">
                 <div className="text-center">
@@ -374,22 +427,16 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Game area */}
             <div className="flex gap-2.5 px-3 mt-3">
-              {/* LEFT - Bingo Board */}
               <div className="w-[42%]">
                 <BingoBoard />
               </div>
 
-              {/* RIGHT - Player Cards */}
               <div className="flex-1 flex flex-col gap-3">
-                {/* Last Called */}
                 <LastCalled />
 
-                {/* ✅ Cards with Auto Mark Toggle as Radio Button */}
                 {myCards.length > 0 && (
                   <div className="space-y-2">
-                    {/* ✅ Small Radio Button - Top of Cards */}
                     <div className="flex items-center justify-between px-1">
                       <div className="flex items-center gap-2">
                         <button
@@ -414,7 +461,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Cards */}
                     {myCards.map((card) => (
                       <BingoCard
                         key={card.id}
@@ -425,7 +471,6 @@ export default function Home() {
                       />
                     ))}
 
-                    {/* BINGO Button */}
                     <button
                       onClick={handleClaimBingo}
                       className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 active:scale-[0.97] text-white font-black py-2.5 rounded-lg text-sm tracking-wider transition-all shadow-lg shadow-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -446,7 +491,6 @@ export default function Home() {
           </motion.div>
         )}
 
-        {/* ===== FINISHED / WAITING ===== */}
         {status === "finished" && !winner && (
           <motion.div
             key="waiting"
@@ -471,7 +515,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Winner Modal Overlay */}
       <WinnerModal />
     </main>
   );
