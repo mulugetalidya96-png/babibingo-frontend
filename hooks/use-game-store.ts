@@ -87,7 +87,7 @@ const initialState = {
   boardCount: 0,
   pool: 0,
   called: [],
-  maxCards: 2,
+  maxCards: 4,
   myCards: [],
   selectedCards: [],
   winner: null,
