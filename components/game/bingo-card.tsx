@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Circle, CircleCheck } from "lucide-react";
+import { X } from "lucide-react";
 import type { GameCard } from "@/types/game";
+import { useGameStore } from "@/hooks/use-game-store";
 
 const LETTERS = ["B", "I", "N", "G", "O"] as const;
 const LETTER_COLORS: Record<string, string> = {
@@ -20,7 +21,7 @@ interface BingoCardProps {
   highlightWin?: boolean;
   winningCells?: Set<string>;
   size?: "xs" | "sm" | "md" | "lg";
-  autoMarkEnabled?: boolean; // ✅ New prop
+  autoMarkEnabled?: boolean;
 }
 
 export function BingoCard({
@@ -30,8 +31,11 @@ export function BingoCard({
   highlightWin,
   winningCells,
   size = "md",
-  autoMarkEnabled = true, // ✅ Default to true
+  autoMarkEnabled = true,
 }: BingoCardProps) {
+  // ✅ Get store actions for manual marking
+  const { updateManualMark } = useGameStore();
+
   // ✅ Check if a number is marked
   const isMarked = (num: number | null) => {
     if (num === null) return true; // Free space is always marked
@@ -51,6 +55,25 @@ export function BingoCard({
     return card.marked_numbers?.includes(num) || false;
   };
 
+  // ✅ Handle click on a cell to toggle manual mark
+  const handleCellClick = (num: number | null) => {
+    // Don't allow clicking free space or if auto mark is enabled
+    if (num === null || autoMarkEnabled) return;
+
+    // Toggle manual mark
+    const currentMarked = card.marked_numbers?.includes(num) || false;
+
+    if (currentMarked) {
+      // Remove manual mark
+      const updatedMarks = card.marked_numbers?.filter((n) => n !== num) || [];
+      updateManualMark(card.id, updatedMarks);
+    } else {
+      // Add manual mark
+      const updatedMarks = [...(card.marked_numbers || []), num];
+      updateManualMark(card.id, updatedMarks);
+    }
+  };
+
   const getCellStyle = (row: number, col: number, num: number | null) => {
     const key = `${row}-${col}`;
     const marked = isMarked(num);
@@ -65,26 +88,17 @@ export function BingoCard({
     // ✅ Marked cells - different style based on manual vs auto
     if (marked) {
       if (manuallyMarked) {
-        return "bg-blue-500/70 text-white border border-blue-400/30"; // Manual mark
+        return "bg-blue-500/70 text-white border border-blue-400/30 cursor-pointer hover:bg-blue-600/80"; // Manual mark - clickable
       }
       return "bg-green-500/70 text-white"; // Auto mark
     }
 
-    return "bg-[#1a1d2e] text-gray-300";
-  };
-
-  // ✅ Get mark indicator (dot/circle) for manual marks
-  const getMarkIndicator = (num: number | null) => {
-    if (num === null) return null;
-    if (!autoMarkEnabled && card.marked_numbers?.includes(num)) {
-      return (
-        <CircleCheck
-          size={8}
-          className="text-blue-400 absolute -top-0.5 -right-0.5"
-        />
-      );
+    // ✅ Available cell - only clickable when auto mark is off
+    if (!autoMarkEnabled && num !== null) {
+      return "bg-[#1a1d2e] text-gray-300 hover:bg-[#2a2d3e] cursor-pointer hover:border hover:border-blue-500/30";
     }
-    return null;
+
+    return "bg-[#1a1d2e] text-gray-300";
   };
 
   const grid: (number | null)[][] = [];
@@ -146,7 +160,7 @@ export function BingoCard({
         <span className={`text-gray-500 font-medium ${config.cardNumber}`}>
           #{card.card_number}
           {!autoMarkEnabled && (
-            <span className="ml-1.5 text-[8px] text-yellow-400/60">🔒</span>
+            <span className="ml-1.5 text-[8px] text-blue-400/60">✋</span>
           )}
         </span>
         {onRemove && (
@@ -177,6 +191,7 @@ export function BingoCard({
           row.map((num, colIdx) => {
             const marked = isMarked(num);
             const manuallyMarked = isManuallyMarked(num);
+            const isClickable = !autoMarkEnabled && num !== null;
 
             return (
               <motion.div
@@ -184,22 +199,19 @@ export function BingoCard({
                 initial={marked ? { scale: 0 } : false}
                 animate={marked ? { scale: 1 } : {}}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                onClick={() => handleCellClick(num)}
                 className={`
                   relative aspect-square flex items-center justify-center rounded-md font-bold
                   transition-all duration-300 ${getCellStyle(rowIdx, colIdx, num)}
                   ${config.cell}
+                  ${isClickable ? "active:scale-95" : ""}
                 `}
               >
                 {num === null ? "★" : num}
-                {/* ✅ Show manual mark indicator */}
+
+                {/* ✅ Manual mark indicator */}
                 {manuallyMarked && (
                   <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_6px_rgba(96,165,250,0.5)]" />
-                )}
-                {/* ✅ Show "manual" label on hover (optional) */}
-                {manuallyMarked && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[4px] text-blue-400/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                    M
-                  </div>
                 )}
               </motion.div>
             );
@@ -207,12 +219,18 @@ export function BingoCard({
         )}
       </div>
 
-      {/* ✅ Auto Mark Status Indicator */}
-      {!autoMarkEnabled && (
-        <div className="mt-1 text-center text-[6px] text-yellow-400/40">
-          Manual mark mode • Click numbers to mark manually
-        </div>
-      )}
+      {/* ✅ Mode Indicator */}
+      <div className="mt-1 text-center">
+        {!autoMarkEnabled ? (
+          <span className="text-[8px] text-blue-400/60">
+            💡 Click numbers to manually mark/unmark
+          </span>
+        ) : (
+          <span className="text-[8px] text-green-400/40">
+            🤖 Auto-mark enabled
+          </span>
+        )}
+      </div>
     </motion.div>
   );
 }

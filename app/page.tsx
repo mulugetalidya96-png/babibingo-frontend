@@ -37,12 +37,16 @@ export default function Home() {
     pool,
     players,
     stake,
+    timer,
     boardCount,
     called,
   } = useGameStore();
 
   // ✅ Auto Mark state
   const [autoMarkEnabled, setAutoMarkEnabled] = useState(true);
+  // ✅ Countdown animation state
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownNumber, setCountdownNumber] = useState(3);
 
   const lastCalledRef = useRef<string | null>(null);
 
@@ -54,6 +58,33 @@ export default function Home() {
     }, 1000);
     return () => clearInterval(interval);
   }, [status, nextGameTimer, setNextGameTimer]);
+
+  // ✅ Countdown animation effect when timer hits 1
+  useEffect(() => {
+    if (status !== "waiting") return;
+
+    // Show countdown animation when timer is 1 second
+    if (timer <= 1 && timer > 0) {
+      setShowCountdown(true);
+      setCountdownNumber(3);
+
+      // Countdown sequence: 3, 2, 1, GO!
+      const countdownInterval = setInterval(() => {
+        setCountdownNumber((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            // Game will start
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 500);
+
+      return () => clearInterval(countdownInterval);
+    } else {
+      setShowCountdown(false);
+    }
+  }, [timer, status]);
 
   const handleClaimBingo = useCallback(() => {
     if (myCards.length === 0) return;
@@ -139,6 +170,32 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* ✅ Countdown Overlay */}
+      <AnimatePresence>
+        {showCountdown && countdownNumber > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
+          >
+            <motion.div
+              key={countdownNumber}
+              initial={{ scale: 2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-8xl font-black text-yellow-400"
+            >
+              {countdownNumber === 3 && "3️⃣"}
+              {countdownNumber === 2 && "2️⃣"}
+              {countdownNumber === 1 && "1️⃣"}
+              {countdownNumber === 0 && "🚀"}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Top bar - ONLY in LOBBY */}
       {isLobby && (

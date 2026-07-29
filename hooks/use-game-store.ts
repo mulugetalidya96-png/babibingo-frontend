@@ -54,22 +54,25 @@ interface GameState {
         | "reserveCard"
         | "unReserveCard"
         | "setBalance"
+        | "updateManualMark"
       >
     >,
   ) => void;
   selectCard: (cardNumber: number) => void;
   deselectCard: (cardNumber: number) => void;
   addMyCard: (card: GameCard) => void;
-  removeMyCard: (cardNumber: number) => void; // ✅ Added
+  removeMyCard: (cardNumber: number) => void;
   setMyCards: (cards: GameCard[]) => void;
   markCalled: (display: string) => void;
   setWinner: (winner: WinnerInfo | null) => void;
-  setWinners: (winners: WinnerInfo[]) => void; // ✅ NEW
+  setWinners: (winners: WinnerInfo[]) => void;
   setNextGameTimer: (timer: number) => void;
   toggleSound: () => void;
   setCurrentCall: (call: string | null) => void;
   reset: () => void;
   setBalance: (balance: number) => void;
+  updateManualMark: (cardId: string, markedNumbers: number[]) => void; // ✅ New action
+
   // Reserved cards management
   setReservedCardsList: (cards: number[]) => void;
   addReservedCard: (card: number) => void;
@@ -120,7 +123,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addMyCard: (card) => set((s) => ({ myCards: [...s.myCards, card] })),
 
-  // ✅ New: Remove a card from myCards by card number
   removeMyCard: (cardNumber: number) =>
     set((s) => ({
       myCards: s.myCards.filter((c) => c.card_number !== cardNumber),
@@ -144,6 +146,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   setCurrentCall: (call) => set({ currentCall: call }),
 
   reset: () => set(initialState),
+
+  // Balance
+  setBalance: (balance: number) => set({ balance }),
+
+  // ✅ Update manual marks on a card
+  updateManualMark: (cardId: string, markedNumbers: number[]) =>
+    set((s) => ({
+      myCards: s.myCards.map((card) =>
+        card.id === cardId ? { ...card, marked_numbers: markedNumbers } : card,
+      ),
+    })),
 
   // Reserved cards management
   setReservedCardsList: (cards: number[]) => set({ reservedCards: cards }),
@@ -171,7 +184,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => ({
       reservedCards: s.reservedCards.filter((c) => c !== card),
     })),
-  setBalance: (balance: number) => set({ balance }),
+
   resetForNewGame: () =>
     set((s) => ({
       ...initialState,
