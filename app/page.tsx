@@ -14,16 +14,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Volume2,
   VolumeX,
-  CheckSquare,
-  Square,
   Wifi,
   WifiOff,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import { useBingoSound } from "@/hooks/use-bingo-sound";
 
 export default function Home() {
   const { user, ready } = useTelegram();
-  const { send, isConnected } = useWebSocket(user?.id); // ✅ Get isConnected from WebSocket hook
+  const { send, isConnected } = useWebSocket(user?.id);
   const { playNumber, toggleMute, isMuted } = useBingoSound();
 
   const {
@@ -123,7 +123,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] pb-24">
-      {/* ✅ Connection Status Indicator */}
+      {/* Connection Status Indicator */}
       <div className="flex items-center justify-end px-4 py-1">
         <div className="flex items-center gap-1 text-[10px] text-gray-500">
           {isConnected ? (
@@ -188,7 +188,7 @@ export default function Home() {
               {myCards.length > 0 ? (
                 <>
                   <div className="text-center text-xs text-gray-400 font-medium mb-2">
-                    Your cards ({myCards.length}/{2})
+                    Your cards ({myCards.length}/{4})
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {myCards.map((card) => (
@@ -269,12 +269,38 @@ export default function Home() {
 
               {/* RIGHT - Player Cards */}
               <div className="flex-1 flex flex-col gap-3">
-                {/* ✅ Last Called */}
+                {/* Last Called */}
                 <LastCalled />
 
-                {/* ✅ Cards */}
+                {/* ✅ Cards with Auto Mark Toggle as Radio Button */}
                 {myCards.length > 0 && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
+                    {/* ✅ Small Radio Button - Top of Cards */}
+                    <div className="flex items-center justify-between px-1">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleAutoMark}
+                          className="flex items-center gap-1.5 text-[10px] font-medium transition-colors duration-200 text-gray-400 hover:text-white"
+                        >
+                          {autoMarkEnabled ? (
+                            <ToggleRight size={18} className="text-green-400" />
+                          ) : (
+                            <ToggleLeft size={18} className="text-gray-500" />
+                          )}
+                          <span
+                            className={
+                              autoMarkEnabled
+                                ? "text-green-400"
+                                : "text-gray-500"
+                            }
+                          >
+                            Auto Mark
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Cards */}
                     {myCards.map((card) => (
                       <BingoCard
                         key={card.id}
@@ -284,36 +310,6 @@ export default function Home() {
                         autoMarkEnabled={autoMarkEnabled}
                       />
                     ))}
-
-                    {/* ✅ Auto Mark Toggle - Under Last Called, Above Cards */}
-                    <div className="flex items-center justify-between gap-2 px-1 py-1.5 bg-[#1a1d2e] rounded-lg border border-white/5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={toggleAutoMark}
-                          className={`
-                            flex items-center justify-center gap-2
-                            px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200
-                            ${
-                              autoMarkEnabled
-                                ? "bg-green-600 hover:bg-green-500 text-white"
-                                : "bg-[#252a3d] hover:bg-[#2d3348] text-gray-400"
-                            }
-                          `}
-                        >
-                          {autoMarkEnabled ? (
-                            <CheckSquare size={14} className="text-green-300" />
-                          ) : (
-                            <Square size={14} className="text-gray-400" />
-                          )}
-                          {autoMarkEnabled ? "AUTO MARK ON" : "AUTO MARK OFF"}
-                        </button>
-                        <span className="text-[10px] text-gray-500">
-                          {autoMarkEnabled
-                            ? "Numbers are auto-marked"
-                            : "Mark numbers manually"}
-                        </span>
-                      </div>
-                    </div>
 
                     {/* BINGO Button */}
                     <button
