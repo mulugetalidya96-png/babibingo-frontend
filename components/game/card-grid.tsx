@@ -109,18 +109,18 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       return "bg-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.6)] border border-green-400";
     }
 
-    // ✅ Owned by me - Green (changed from orange)
+    // ✅ Owned by me - Green
     if (myCardNumbers.has(num)) {
       return "bg-gradient-to-br from-green-600 to-green-700 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)] border border-green-500/30";
     }
 
-    // ✅ Reserved by other players - Orange (changed from purple)
+    // ✅ Reserved by other players - Orange
     if (reservedSet.has(num)) {
       return "bg-orange-600/40 text-orange-300 cursor-not-allowed border border-orange-500/30";
     }
 
     // ✅ Available - Dark with hover effect
-    return "bg-[#1a1d2e] text-gray-400 hover:bg-[#252a3d] hover:text-white transition-colors";
+    return "bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3d] hover:text-white transition-colors";
   };
 
   const canSelect = (num: number) =>
@@ -183,9 +183,8 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
                 flex
                 items-center
                 justify-center
-                rounded-[2px] sm:rounded-[4px]
-                text-[9px] sm:text-[10px] md:text-[11px] lg:text-[12px]
-                font-bold
+                rounded-[4px] sm:rounded-[6px]
+                text-[13px] sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold
                 transition-all
                 duration-150
                 ${getCellClass(num)}
@@ -202,11 +201,11 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
               {num}
               {isReserving && pendingCard === num && (
                 <motion.div
-                  className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2px] sm:rounded-[4px]"
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[4px] sm:rounded-[6px]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 </motion.div>
               )}
             </motion.button>

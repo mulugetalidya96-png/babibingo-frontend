@@ -33,42 +33,28 @@ export function BingoCard({
   size = "md",
   autoMarkEnabled = true,
 }: BingoCardProps) {
-  // ✅ Get store actions for manual marking
   const { updateManualMark } = useGameStore();
 
-  // ✅ Check if a number is marked
   const isMarked = (num: number | null) => {
-    if (num === null) return true; // Free space is always marked
-
-    // ✅ If auto mark is disabled, only show manually marked numbers
+    if (num === null) return true;
     if (!autoMarkEnabled) {
       return card.marked_numbers?.includes(num) || false;
     }
-
-    // ✅ Auto mark enabled: show both called and manually marked
     return calledNumbers.includes(num) || card.marked_numbers?.includes(num);
   };
 
-  // ✅ Check if a number was manually marked by the user
   const isManuallyMarked = (num: number | null) => {
     if (num === null) return false;
     return card.marked_numbers?.includes(num) || false;
   };
 
-  // ✅ Handle click on a cell to toggle manual mark
   const handleCellClick = (num: number | null) => {
-    // Don't allow clicking free space or if auto mark is enabled
     if (num === null || autoMarkEnabled) return;
-
-    // Toggle manual mark
     const currentMarked = card.marked_numbers?.includes(num) || false;
-
     if (currentMarked) {
-      // Remove manual mark
       const updatedMarks = card.marked_numbers?.filter((n) => n !== num) || [];
       updateManualMark(card.id, updatedMarks);
     } else {
-      // Add manual mark
       const updatedMarks = [...(card.marked_numbers || []), num];
       updateManualMark(card.id, updatedMarks);
     }
@@ -80,20 +66,17 @@ export function BingoCard({
     const manuallyMarked = isManuallyMarked(num);
     const isWinning = winningCells?.has(key);
 
-    // ✅ Winning cells - highest priority
     if (isWinning && highlightWin) {
       return "bg-bingo-yellow text-black border-2 border-yellow-300 shadow-[0_0_15px_rgba(245,197,66,0.8)]";
     }
 
-    // ✅ Marked cells - different style based on manual vs auto
     if (marked) {
       if (manuallyMarked) {
-        return "bg-blue-500/70 text-white border border-blue-400/30 cursor-pointer hover:bg-blue-600/80"; // Manual mark - clickable
+        return "bg-blue-500/70 text-white border border-blue-400/30 cursor-pointer hover:bg-blue-600/80";
       }
-      return "bg-green-500/70 text-white"; // Auto mark
+      return "bg-green-500/70 text-white";
     }
 
-    // ✅ Available cell - only clickable when auto mark is off
     if (!autoMarkEnabled && num !== null) {
       return "bg-[#1a1d2e] text-gray-300 hover:bg-[#2a2d3e] cursor-pointer hover:border hover:border-blue-500/30";
     }
@@ -112,13 +95,12 @@ export function BingoCard({
     ];
   }
 
-  // ✅ Size configurations
   const sizeConfig = {
     xs: {
       container: "p-1",
       cardNumber: "text-[6px]",
       header: "text-[6px] py-0.5",
-      cell: "text-[5px]",
+      cell: "text-[8px] font-bold",
       gap: "gap-[1px]",
       icon: 8,
     },
@@ -126,7 +108,7 @@ export function BingoCard({
       container: "p-1.5 sm:p-2 mx-1 sm:mx-2",
       cardNumber: "text-[10px] sm:text-xs",
       header: "text-[10px] sm:text-xs py-0.5 sm:py-1",
-      cell: "text-[8px] sm:text-[10px] md:text-xs",
+      cell: "text-[14px] sm:text-[16px] md:text-[18px] font-bold",
       gap: "gap-[2px] sm:gap-[3px]",
       icon: 12,
     },
@@ -134,7 +116,7 @@ export function BingoCard({
       container: "p-2 sm:p-3 mx-2 sm:mx-3",
       cardNumber: "text-xs sm:text-sm",
       header: "text-[11px] sm:text-sm py-1 sm:py-1.5",
-      cell: "text-[10px] sm:text-xs md:text-sm",
+      cell: "text-[16px] sm:text-[18px] md:text-[20px] font-bold",
       gap: "gap-[2px] sm:gap-[3px]",
       icon: 14,
     },
@@ -142,7 +124,7 @@ export function BingoCard({
       container: "p-3 sm:p-4 mx-3 sm:mx-4",
       cardNumber: "text-sm sm:text-base",
       header: "text-sm sm:text-base py-1.5 sm:py-2",
-      cell: "text-xs sm:text-sm md:text-base",
+      cell: "text-[18px] sm:text-[20px] md:text-[24px] font-bold",
       gap: "gap-[3px] sm:gap-[4px]",
       icon: 16,
     },
@@ -201,7 +183,7 @@ export function BingoCard({
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 onClick={() => handleCellClick(num)}
                 className={`
-                  relative aspect-square flex items-center justify-center rounded-md font-bold
+                  relative aspect-square flex items-center justify-center rounded-md
                   transition-all duration-300 ${getCellStyle(rowIdx, colIdx, num)}
                   ${config.cell}
                   ${isClickable ? "active:scale-95" : ""}
@@ -209,7 +191,6 @@ export function BingoCard({
               >
                 {num === null ? "★" : num}
 
-                {/* ✅ Manual mark indicator */}
                 {manuallyMarked && (
                   <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_6px_rgba(96,165,250,0.5)]" />
                 )}
@@ -219,7 +200,6 @@ export function BingoCard({
         )}
       </div>
 
-      {/* ✅ Mode Indicator */}
       <div className="mt-1 text-center">
         {!autoMarkEnabled ? (
           <span className="text-[8px] text-blue-400/60">
