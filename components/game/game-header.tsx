@@ -39,8 +39,8 @@ export function GameHeader() {
     },
     {
       icon: Users,
-      label: "PLAYERS",
-      value: `${players || 0}`,
+      label: "BOARD",
+      value: `${boardCount}/400`,
       color: "text-purple-400",
       bg: "bg-purple-400/10",
       border: "border-purple-400/20",
