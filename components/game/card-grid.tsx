@@ -18,6 +18,8 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
   const [isReserving, setIsReserving] = useState(false);
   const [pendingCard, setPendingCard] = useState<number | null>(null);
 
+  const MAX_CARDS = 4;
+
   const myCardNumbers = new Set(myCards.map((c) => c.card_number));
   const reservedSet = new Set(reservedCards);
 
@@ -29,11 +31,9 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       console.log("❌ Reservation error:", error);
       setIsReserving(false);
       if (pendingCard !== null) {
-        // ✅ Remove the card from selectedCards
         deselectCard(pendingCard);
         setPendingCard(null);
       }
-      // ✅ Show toast
       toast.error(error);
     },
     [pendingCard, deselectCard],
@@ -75,9 +75,9 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       return;
     }
 
-    // Max 2 cards
-    if (selectedCards.length >= 4) {
-      toast.warning("Maximum 4 cards per player");
+    // Max 4 cards
+    if (selectedCards.length >= MAX_CARDS) {
+      toast.warning(`Maximum ${MAX_CARDS} cards per player`);
       return;
     }
 
@@ -93,7 +93,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
       card_number: num,
     });
 
-    // ✅ Set a timeout to clear reserving state if no response (10 seconds)
+    // Set a timeout to clear reserving state if no response (10 seconds)
     setTimeout(() => {
       if (isReserving && pendingCard === num) {
         console.log("⏰ Reservation timeout for card", num);
@@ -104,19 +104,23 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
   };
 
   const getCellClass = (num: number) => {
+    // ✅ Selected (pending reservation) - Green glow
     if (selectedCards.includes(num)) {
-      return "bg-bingo-yellow text-black shadow-[0_0_10px_rgba(245,197,66,0.6)]";
+      return "bg-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.6)] border border-green-400";
     }
 
+    // ✅ Owned cards (reserved and confirmed) - Orange
     if (myCardNumbers.has(num)) {
-      return "bg-bingo-orange text-white";
+      return "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_0_8px_rgba(251,146,60,0.3)]";
     }
 
+    // ✅ Reserved by other players - Purple/Indigo (instead of gray)
     if (reservedSet.has(num)) {
-      return "bg-gray-600 text-gray-300 cursor-not-allowed";
+      return "bg-indigo-600/40 text-indigo-300 cursor-not-allowed border border-indigo-500/30";
     }
 
-    return "bg-[#1a1d2e] text-gray-400 hover:bg-[#252a3d]";
+    // ✅ Available - Dark with hover effect
+    return "bg-[#1a1d2e] text-gray-400 hover:bg-[#252a3d] hover:text-white transition-colors";
   };
 
   const canSelect = (num: number) =>
@@ -127,39 +131,42 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
     !isReserving;
 
   return (
-    <div className="px-3 py-2 flex flex-col h-full">
-      <div className="text-center text-sm text-gray-400 mb-3 flex-shrink-0">
+    <div className="px-2 sm:px-3 py-2 flex flex-col h-full">
+      <div className="text-center text-xs sm:text-sm text-gray-400 mb-2 sm:mb-3 flex-shrink-0">
         Select Your Cards —{" "}
-        <span className="text-white font-bold">{selectedCards.length}/2</span>{" "}
+        <span className="text-white font-bold">
+          {selectedCards.length}/{MAX_CARDS}
+        </span>{" "}
         selected
         {selectedCards.length > 0 && (
-          <span className="ml-2 text-xs text-yellow-400">
+          <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-yellow-400">
             (Click again to cancel)
           </span>
         )}
         {isReserving && (
-          <span className="ml-2 text-xs text-blue-400 animate-pulse">
+          <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs text-blue-400 animate-pulse">
             ⏳ Reserving...
           </span>
         )}
       </div>
 
-      {/* Scrollable grid */}
+      {/* Scrollable grid - Responsive sizing */}
       <div
         className="
           flex-1
           overflow-y-auto
-          pr-1
+          pr-0.5 sm:pr-1
           scrollbar-thin
           scrollbar-thumb-gray-700
           scrollbar-track-transparent
-          min-h-[300px]
+          min-h-[250px] sm:min-h-[300px]
         "
         style={{
           maxHeight: "calc(60vh - 40px)",
         }}
       >
-        <div className="grid grid-cols-10 gap-[2px] sm:gap-[3px]">
+        {/* ✅ Responsive grid: 8 columns on mobile, 10 on larger screens */}
+        <div className="grid grid-cols-8 sm:grid-cols-10 gap-[2px] sm:gap-[3px]">
           {Array.from({ length: 400 }, (_, i) => i + 1).map((num) => (
             <motion.button
               key={num}
@@ -177,7 +184,7 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
                 items-center
                 justify-center
                 rounded-[2px] sm:rounded-[4px]
-                text-[6px] sm:text-[8px] md:text-[10px]
+                text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px]
                 font-bold
                 transition-all
                 duration-150
@@ -188,12 +195,14 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
                     : "cursor-default"
                 }
                 ${isReserving && pendingCard === num ? "opacity-50" : ""}
+                hover:scale-105
+                hover:z-10
               `}
             >
               {num}
               {isReserving && pendingCard === num && (
                 <motion.div
-                  className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-[2px] sm:rounded-[4px]"
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2px] sm:rounded-[4px]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
