@@ -76,8 +76,8 @@ export function CardGrid({ send }: { send: (data: object) => void }) {
     }
 
     // Max 2 cards
-    if (selectedCards.length >= 2) {
-      toast.warning("Maximum 2 cards per player");
+    if (selectedCards.length >= 4) {
+      toast.warning("Maximum 4 cards per player");
       return;
     }
 
