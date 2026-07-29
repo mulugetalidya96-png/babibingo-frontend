@@ -49,6 +49,10 @@ export function useWebSocket(userId: number | undefined) {
         switch (data.type) {
           case "game.new":
             resetForNewGame();
+            if (userId) {
+              // Request updated balance
+              send({ type: "game.state" });
+            }
             setGameState({
               gameId: data.game_id || null,
               status: "waiting",
@@ -138,7 +142,12 @@ export function useWebSocket(userId: number | undefined) {
               }
             }
             break;
-
+          case "balance.update":
+            if (data.user_id === userId && data.balance !== undefined) {
+              console.log(`💰 Balance updated: ${data.balance} ETB`);
+              setBalance(data.balance);
+            }
+            break;
           case "game.started":
             setGameState({
               status: "calling",
