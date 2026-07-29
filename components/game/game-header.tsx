@@ -2,46 +2,17 @@
 
 import { motion } from "framer-motion";
 import { useGameStore } from "@/hooks/use-game-store";
-import { useTelegram } from "@/components/providers/telegram-provider";
 import { Wallet, Users, Grid3X3, Timer, Trophy } from "lucide-react";
-import { useEffect, useState } from "react";
 
 export function GameHeader() {
-  const { stake, boardCount, timer, pool, players } = useGameStore();
-  const { user } = useTelegram();
-  const [balance, setBalance] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // ✅ Fetch user balance from backend
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const fetchBalance = async () => {
-      try {
-        // ✅ Use full URL or ensure the API route exists
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || ""}/user/balance?telegram_id=${user.id}`,
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setBalance(data.balance || 0);
-        } else {
-          console.error("Failed to fetch balance:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching balance:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBalance();
-
-    // ✅ Refresh balance every 30 seconds
-    const interval = setInterval(fetchBalance, 30000);
-    return () => clearInterval(interval);
-  }, [user?.id]);
+  const {
+    stake,
+    boardCount,
+    timer,
+    pool,
+    players,
+    balance, // ✅ Get balance from store
+  } = useGameStore();
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -53,7 +24,7 @@ export function GameHeader() {
     {
       icon: Wallet,
       label: "BALANCE",
-      value: isLoading ? "..." : `${balance.toFixed(0)} ETB`,
+      value: `${balance.toFixed(0)} ETB`,
       color: "text-yellow-400",
     },
     {

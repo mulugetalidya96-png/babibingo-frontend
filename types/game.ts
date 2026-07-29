@@ -45,6 +45,7 @@ export interface GameStateResponse {
   my_cards: GameCard[];
   max_cards: number;
   reserved_cards: number[];
+  balance: number;
 }
 
 export interface WSRequest {
@@ -74,4 +75,5 @@ export interface WSResponse {
   stake?: number;
   card_number?: number;
   user_id?: number;
+  balance?: number;
 }

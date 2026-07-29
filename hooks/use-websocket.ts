@@ -26,6 +26,7 @@ export function useWebSocket(userId: number | undefined) {
     unReserveCard,
     resetForNewGame,
     deselectCard,
+    setBalance,
   } = useGameStore();
 
   const connect = useCallback(() => {
@@ -89,6 +90,7 @@ export function useWebSocket(userId: number | undefined) {
                 stake: data.state.stake,
                 called: data.state.called,
                 maxCards: data.state.max_cards,
+                balance: data.state.balance || 0,
               });
               if (data.state.my_cards) {
                 setMyCards(data.state.my_cards);
@@ -278,6 +280,7 @@ export function useWebSocket(userId: number | undefined) {
     unReserveCard,
     resetForNewGame,
     deselectCard,
+    setBalance,
   ]);
 
   const disconnect = useCallback(() => {

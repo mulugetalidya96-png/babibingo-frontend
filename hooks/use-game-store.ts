@@ -15,6 +15,7 @@ interface GameState {
   called: string[];
   maxCards: number;
 
+  balance: number;
   reservedCards: number[];
   // User cards
   myCards: GameCard[];
@@ -52,6 +53,7 @@ interface GameState {
         | "removeReservedCard"
         | "reserveCard"
         | "unReserveCard"
+        | "setBalance"
       >
     >,
   ) => void;
@@ -67,7 +69,7 @@ interface GameState {
   toggleSound: () => void;
   setCurrentCall: (call: string | null) => void;
   reset: () => void;
-
+  setBalance: (balance: number) => void;
   // Reserved cards management
   setReservedCardsList: (cards: number[]) => void;
   addReservedCard: (card: number) => void;
@@ -88,6 +90,7 @@ const initialState = {
   pool: 0,
   called: [],
   maxCards: 4,
+  balance: 0,
   myCards: [],
   selectedCards: [],
   winner: null,
@@ -168,7 +171,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => ({
       reservedCards: s.reservedCards.filter((c) => c !== card),
     })),
-
+  setBalance: (balance: number) => set({ balance }),
   resetForNewGame: () =>
     set((s) => ({
       ...initialState,
