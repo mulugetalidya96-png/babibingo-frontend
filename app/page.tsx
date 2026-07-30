@@ -419,7 +419,7 @@ export default function Home() {
                     PLAYERS
                   </div>
                   <div className="text-sm font-bold text-white">
-                    {players || 0}
+                    {boardCount || 0}
                   </div>
                 </div>
                 <div className="text-center">
