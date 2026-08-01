@@ -48,12 +48,12 @@ export default function Home() {
   const [countdownPhase, setCountdownPhase] = useState<"countdown" | "go" | "">(
     "",
   );
-  const [countdownKey, setCountdownKey] = useState(0);
 
   const lastCalledRef = useRef<string | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const previousTimerRef = useRef<number | null>(null);
 
-  // ✅ Clean up countdown timer on unmount
+  // Clean up countdown timer on unmount
   useEffect(() => {
     return () => {
       if (countdownTimerRef.current) {
@@ -63,7 +63,7 @@ export default function Home() {
     };
   }, []);
 
-  // ✅ Next game timer
+  // Next game timer
   useEffect(() => {
     if (status !== "finished" || nextGameTimer <= 0) return;
     const interval = setInterval(() => {
@@ -72,12 +72,11 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [status, nextGameTimer, setNextGameTimer]);
 
-  // ✅ Watch for status change to "calling" - hide countdown
+  // Watch for status change to "calling" - hide countdown
   useEffect(() => {
     if (status === "calling") {
       setShowCountdown(false);
       setCountdownPhase("");
-      setCountdownKey((prev) => prev + 1);
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
@@ -85,75 +84,109 @@ export default function Home() {
     }
   }, [status]);
 
-  // ✅ Countdown animation - starts when timer hits 3, 2, 1
+  // Main countdown effect - simplified and fixed
   useEffect(() => {
     // Only run countdown when in waiting state
     if (status !== "waiting") {
-      setShowCountdown(false);
-      setCountdownPhase("");
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-        countdownTimerRef.current = null;
+      if (showCountdown) {
+        setShowCountdown(false);
+        setCountdownPhase("");
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
       }
       return;
     }
 
-    // ✅ Start countdown when timer is 3 or less AND we're in waiting state
-    if (timer <= 3 && timer >= 0 && !showCountdown) {
-      const startNumber = timer > 0 ? timer : 3;
-      setCountdownNumber(startNumber);
-      setCountdownPhase("countdown");
-      setShowCountdown(true);
+    // ✅ If timer is 3, 2, or 1 - show countdown
+    if (timer <= 3 && timer >= 0) {
+      // If countdown not showing, start it
+      if (!showCountdown) {
+        setShowCountdown(true);
+        setCountdownNumber(timer > 0 ? timer : 3);
+        setCountdownPhase("countdown");
 
-      // Clear any existing timer
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-        countdownTimerRef.current = null;
-      }
+        // Clear any existing timer
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
 
-      // Start countdown timer
-      let currentNumber = startNumber;
-      countdownTimerRef.current = setInterval(() => {
-        currentNumber -= 1;
-        if (currentNumber <= 0) {
-          // Show "GO!"
-          setCountdownPhase("go");
-          setCountdownNumber(0);
+        // Start countdown sequence
+        let currentNumber = timer > 0 ? timer : 3;
+        countdownTimerRef.current = setInterval(() => {
+          currentNumber -= 1;
+          if (currentNumber <= 0) {
+            // Show "GO!"
+            setCountdownPhase("go");
+            setCountdownNumber(0);
+            if (countdownTimerRef.current) {
+              clearInterval(countdownTimerRef.current);
+              countdownTimerRef.current = null;
+            }
+            // Auto-hide after 2 seconds
+            setTimeout(() => {
+              setShowCountdown(false);
+              setCountdownPhase("");
+            }, 2000);
+          } else {
+            setCountdownNumber(currentNumber);
+          }
+        }, 700);
+      } else {
+        // ✅ If countdown is showing but timer changed, update the number
+        if (
+          timer > 0 &&
+          timer !== countdownNumber &&
+          countdownPhase === "countdown"
+        ) {
+          setCountdownNumber(timer);
+          // Reset the timer to match the new timer value
           if (countdownTimerRef.current) {
             clearInterval(countdownTimerRef.current);
             countdownTimerRef.current = null;
           }
-
-          // ✅ Auto-hide after 2 seconds if game hasn't started
-          setTimeout(() => {
-            // Check if still showing countdown
-            setShowCountdown(false);
-            setCountdownPhase("");
-          }, 2000);
-        } else {
-          setCountdownNumber(currentNumber);
+          let currentNumber = timer;
+          countdownTimerRef.current = setInterval(() => {
+            currentNumber -= 1;
+            if (currentNumber <= 0) {
+              setCountdownPhase("go");
+              setCountdownNumber(0);
+              if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+              }
+              setTimeout(() => {
+                setShowCountdown(false);
+                setCountdownPhase("");
+              }, 2000);
+            } else {
+              setCountdownNumber(currentNumber);
+            }
+          }, 700);
         }
-      }, 700);
-    }
-
-    // ✅ If timer goes back up, hide countdown
-    if (timer > 3 && showCountdown) {
-      setShowCountdown(false);
-      setCountdownPhase("");
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-        countdownTimerRef.current = null;
+      }
+    } else {
+      // If timer > 3, hide countdown
+      if (showCountdown) {
+        setShowCountdown(false);
+        setCountdownPhase("");
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
       }
     }
 
-    // Cleanup timer
+    // Cleanup
     return () => {
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
       }
     };
-  }, [timer, status, showCountdown]);
+  }, [timer, status, showCountdown, countdownNumber, countdownPhase]);
 
   const handleClaimBingo = useCallback(() => {
     if (myCards.length === 0) return;
@@ -236,15 +269,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Beautiful Countdown Overlay - Auto-closes when game starts */}
-      <AnimatePresence mode="wait">
+      {/* Beautiful Countdown Overlay */}
+      <AnimatePresence>
         {showCountdown && (
           <motion.div
-            key={countdownKey}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-black/95 to-[#0a0a0f] backdrop-blur-md"
           >
             <div className="flex flex-col items-center">
@@ -262,7 +293,6 @@ export default function Home() {
                   }}
                   className="relative"
                 >
-                  {/* ✅ Glowing circle behind number */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
                       initial={{ scale: 0.5, opacity: 0 }}
@@ -271,15 +301,11 @@ export default function Home() {
                       className="w-48 h-48 rounded-full bg-yellow-400/20 blur-3xl"
                     />
                   </div>
-
-                  {/* ✅ Large number with gradient */}
                   <div className="relative text-[200px] sm:text-[280px] font-black leading-none tracking-tighter">
                     <span className="bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 bg-clip-text text-transparent">
                       {countdownNumber}
                     </span>
                   </div>
-
-                  {/* ✅ Subtle number shadow */}
                   <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-xl" />
                 </motion.div>
               )}
@@ -297,7 +323,6 @@ export default function Home() {
                   }}
                   className="flex flex-col items-center"
                 >
-                  {/* ✅ Glowing ring */}
                   <div className="relative">
                     <motion.div
                       animate={{ scale: [1, 1.2, 1] }}
@@ -306,15 +331,12 @@ export default function Home() {
                     >
                       <div className="w-64 h-64 rounded-full border-4 border-green-400/20 blur-2xl" />
                     </motion.div>
-
                     <div className="text-[150px] sm:text-[200px] font-black leading-none tracking-tighter">
                       <span className="bg-gradient-to-r from-green-300 via-green-400 to-emerald-400 bg-clip-text text-transparent">
                         GO!
                       </span>
                     </div>
                   </div>
-
-                  {/* ✅ Pulsing "Waiting" text */}
                   <motion.div
                     animate={{ opacity: [0.4, 1, 0.4] }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
@@ -325,7 +347,6 @@ export default function Home() {
                 </motion.div>
               )}
 
-              {/* ✅ Animated progress bar */}
               {countdownPhase === "countdown" && (
                 <motion.div
                   initial={{ width: "100%" }}
@@ -335,7 +356,6 @@ export default function Home() {
                 />
               )}
 
-              {/* ✅ Particle effects (small dots) */}
               {countdownPhase === "countdown" && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   {[...Array(20)].map((_, i) => (
