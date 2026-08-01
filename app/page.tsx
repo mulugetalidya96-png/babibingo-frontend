@@ -48,6 +48,7 @@ export default function Home() {
   const [countdownPhase, setCountdownPhase] = useState<"countdown" | "go" | "">(
     "",
   );
+  const [countdownKey, setCountdownKey] = useState(0);
 
   const lastCalledRef = useRef<string | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,15 +74,16 @@ export default function Home() {
 
   // ✅ Watch for status change to "calling" - hide countdown
   useEffect(() => {
-    if (status === "calling" && showCountdown) {
+    if (status === "calling") {
       setShowCountdown(false);
       setCountdownPhase("");
+      setCountdownKey((prev) => prev + 1);
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
       }
     }
-  }, [status, showCountdown]);
+  }, [status]);
 
   // ✅ Countdown animation - starts when timer hits 3, 2, 1
   useEffect(() => {
@@ -96,11 +98,12 @@ export default function Home() {
       return;
     }
 
-    // Start countdown when timer is 3 or less and countdown not already showing
+    // ✅ Start countdown when timer is 3 or less AND we're in waiting state
     if (timer <= 3 && timer >= 0 && !showCountdown) {
-      setShowCountdown(true);
-      setCountdownNumber(timer > 0 ? timer : 3);
+      const startNumber = timer > 0 ? timer : 3;
+      setCountdownNumber(startNumber);
       setCountdownPhase("countdown");
+      setShowCountdown(true);
 
       // Clear any existing timer
       if (countdownTimerRef.current) {
@@ -109,7 +112,7 @@ export default function Home() {
       }
 
       // Start countdown timer
-      let currentNumber = timer > 0 ? timer : 3;
+      let currentNumber = startNumber;
       countdownTimerRef.current = setInterval(() => {
         currentNumber -= 1;
         if (currentNumber <= 0) {
@@ -120,13 +123,20 @@ export default function Home() {
             clearInterval(countdownTimerRef.current);
             countdownTimerRef.current = null;
           }
+
+          // ✅ Auto-hide after 2 seconds if game hasn't started
+          setTimeout(() => {
+            // Check if still showing countdown
+            setShowCountdown(false);
+            setCountdownPhase("");
+          }, 2000);
         } else {
           setCountdownNumber(currentNumber);
         }
-      }, 600);
+      }, 700);
     }
 
-    // If timer goes back up (game reset), hide countdown
+    // ✅ If timer goes back up, hide countdown
     if (timer > 3 && showCountdown) {
       setShowCountdown(false);
       setCountdownPhase("");
@@ -227,12 +237,14 @@ export default function Home() {
       </div>
 
       {/* ✅ Beautiful Countdown Overlay - Auto-closes when game starts */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showCountdown && (
           <motion.div
+            key={countdownKey}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-black/95 to-[#0a0a0f] backdrop-blur-md"
           >
             <div className="flex flex-col items-center">
