@@ -50,7 +50,19 @@ export default function Home() {
   );
 
   const lastCalledRef = useRef<string | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ✅ Clean up countdown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // ✅ Next game timer
   useEffect(() => {
     if (status !== "finished" || nextGameTimer <= 0) return;
     const interval = setInterval(() => {
@@ -59,46 +71,79 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [status, nextGameTimer, setNextGameTimer]);
 
-  // ✅ Countdown animation - stays until game starts
+  // ✅ Watch for status change to "calling" - hide countdown
   useEffect(() => {
-    if (status === "calling") {
+    if (status === "calling" && showCountdown) {
       setShowCountdown(false);
       setCountdownPhase("");
-      return;
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
     }
+  }, [status, showCountdown]);
 
+  // ✅ Countdown animation - starts when timer hits 3, 2, 1
+  useEffect(() => {
+    // Only run countdown when in waiting state
     if (status !== "waiting") {
       setShowCountdown(false);
       setCountdownPhase("");
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
       return;
     }
 
-    if (timer <= 1 && timer >= 0) {
-      if (!showCountdown) {
-        setShowCountdown(true);
-        setCountdownNumber(3);
-        setCountdownPhase("countdown");
+    // Start countdown when timer is 3 or less and countdown not already showing
+    if (timer <= 3 && timer >= 0 && !showCountdown) {
+      setShowCountdown(true);
+      setCountdownNumber(timer > 0 ? timer : 3);
+      setCountdownPhase("countdown");
+
+      // Clear any existing timer
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
       }
 
-      const countdownInterval = setInterval(() => {
-        setCountdownNumber((prev) => {
-          if (prev === 1) {
-            setCountdownPhase("go");
-            clearInterval(countdownInterval);
-            return 0;
+      // Start countdown timer
+      let currentNumber = timer > 0 ? timer : 3;
+      countdownTimerRef.current = setInterval(() => {
+        currentNumber -= 1;
+        if (currentNumber <= 0) {
+          // Show "GO!"
+          setCountdownPhase("go");
+          setCountdownNumber(0);
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
           }
-          return prev - 1;
-        });
+        } else {
+          setCountdownNumber(currentNumber);
+        }
       }, 600);
+    }
 
-      return () => clearInterval(countdownInterval);
-    } else {
-      if (showCountdown && timer > 1) {
-        setShowCountdown(false);
-        setCountdownPhase("");
+    // If timer goes back up (game reset), hide countdown
+    if (timer > 3 && showCountdown) {
+      setShowCountdown(false);
+      setCountdownPhase("");
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
       }
     }
-  }, [timer, status]);
+
+    // Cleanup timer
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+  }, [timer, status, showCountdown]);
 
   const handleClaimBingo = useCallback(() => {
     if (myCards.length === 0) return;
@@ -181,7 +226,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Beautiful Countdown Overlay */}
+      {/* ✅ Beautiful Countdown Overlay - Auto-closes when game starts */}
       <AnimatePresence>
         {showCountdown && (
           <motion.div
